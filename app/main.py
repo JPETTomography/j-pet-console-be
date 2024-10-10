@@ -1,11 +1,19 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 import models, database
-import producer
+from kafka import KafkaProducer
+from kafka.errors import NoBrokersAvailable
+
+producer = KafkaProducer(bootstrap_servers='kafka:9092')
+
+def send_message(topic, message):
+    producer.send(topic, message.encode('utf-8'))
+    producer.flush()
 
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=database.engine)
+
 
 @app.get("/")
 def read_root():
@@ -32,7 +40,12 @@ def create_sample_users(db: Session = Depends(get_session_local)):
     return {"message": "Sample users created"}
 
 
-@app.post("/send/")
-def send_message(message: str):
-    producer.send_message('my_topic', message)
+@app.post("/send_worker/")
+def send_message_worker(message: str):
+    send_message('worker_topic', message)
+    return {"message": "Message sent"}
+
+@app.post("/send_agent/")
+def send_message_agent(message: str):
+    send_message('agent_topic', message)
     return {"message": "Message sent"}

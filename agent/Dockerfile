@@ -4,4 +4,4 @@ WORKDIR /app
 
 RUN pip install requests kafka-python-ng && apt-get update && apt-get install -y kafkacat
 
-CMD ["./wait-for-kafka.sh", "python", "worker.py"]
+CMD ["./wait-for-kafka.sh", "python", "agent.py"]

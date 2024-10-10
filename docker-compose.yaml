@@ -47,8 +47,18 @@ services:
     build:
       context: ./worker
     volumes:
-      - "./worker:/worker"
+      - "./worker:/app"
     container_name: kafka_worker
+    depends_on:
+      - kafka
+      - web
+
+  agent:
+    build:
+      context: ./agent
+    volumes:
+      - "./agent:/app"
+    container_name: kafka_agent
     depends_on:
       - kafka
       - web

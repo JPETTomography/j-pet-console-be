@@ -3,11 +3,11 @@ from kafka import KafkaConsumer
 import requests
 
 consumer = KafkaConsumer(
-    'worker_topic',
+    'agent_topic',
     bootstrap_servers=['kafka:9092'],
     auto_offset_reset='earliest',
     enable_auto_commit=True,
-    group_id='worker-group'
+    group_id='agent-group'
 )
 
 for message in consumer:
