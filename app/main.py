@@ -4,6 +4,8 @@ import models, database
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from utills.utills import generate_fake_user
+from sqladmin import Admin
+from admin import UserAdmin
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092')
 
@@ -12,6 +14,9 @@ def send_message(topic, message):
     producer.flush()
 
 app = FastAPI()
+admin = Admin(app, database.engine)
+
+admin.add_view(UserAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
 
