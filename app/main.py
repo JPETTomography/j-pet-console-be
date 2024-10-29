@@ -1,18 +1,19 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-import models, database
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
-from utills.utills import generate_fake_user, generate_fake_experiment
+# main.py
+from fastapi import FastAPI
 from sqladmin import Admin
+import models, database
 from admin import UserAdmin, ExperimentAdmin
+from routers import users, experiments
+from kafka import KafkaProducer
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from models import User
+from database import get_session_local
+from auth import create_access_token
+
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092')
-
-def send_message(topic, message):
-    producer.send(topic, message.encode('utf-8'))
-    producer.flush()
-
 app = FastAPI()
 admin = Admin(app, database.engine)
 
@@ -21,47 +22,24 @@ admin.add_view(ExperimentAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
 
+# Include the routers
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
+
+
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_session_local)):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not user.verify_password(form_data.password):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    access_token = create_access_token(data={"sub": user.id})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
-def get_session_local():
-    yield database.SessionLocal()
-
-@app.get("/users/")
-def read_users(db: Session = Depends(get_session_local)):
-    return db.query(models.User).all()
-
-@app.get("/users/{id}")
-def read_user(id: str, db: Session = Depends(get_session_local)):
-    return db.query(models.User).filter(models.User.id == id).first() or f"No user with id: {id} found."
-
-@app.get("/experiments")
-def read_experiments(db: Session = Depends(get_session_local)):
-    return db.query(models.Experiment).all()
-
-@app.get("/experiments/{id}")
-def read_experiments(id: str,db: Session = Depends(get_session_local)):
-    return db.query(models.Experiment).filter(models.Experiment.id == id).first() or f"No experiment with id: {id} found."
-
-@app.post("/create_sample_users/")
-# @TODO remove this later
-def create_sample_users(db: Session = Depends(get_session_local), amount: int = 10):
-    users = [generate_fake_user() for _ in range(amount)]
-    db.add_all(users)
-    db.commit()
-    return {"message": "Sample users created"}
-
-
-@app.post("/create_sample_experiments/")
-# @TODO remove this later
-def create_sample_users(db: Session = Depends(get_session_local), amount: int = 10):
-    users = [generate_fake_experiment(db) for _ in range(amount)]
-    db.add_all(users)
-    db.commit()
-    return {"message": "Sample experiments created"}
-
 
 @app.post("/send_worker/")
 def send_message_worker(message: str):
@@ -72,3 +50,7 @@ def send_message_worker(message: str):
 def send_message_agent(message: str):
     send_message('agent_topic', message)
     return {"message": "Message sent"}
+
+def send_message(topic, message):
+    producer.send(topic, message.encode('utf-8'))
+    producer.flush()

@@ -1,6 +1,9 @@
-from sqlalchemy import Column, Integer, String, text, TIMESTAMP, ForeignKey
+from sqlalchemy import Column, Integer, String, text, TIMESTAMP, ForeignKey, event
 from sqlalchemy.orm import relationship
 from database import Base
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class User(Base):
     __tablename__ = "users"
@@ -13,6 +16,21 @@ class User(Base):
 
     experiments = relationship("Experiment", back_populates="owner")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if "password" in kwargs:
+            self.hash_password()
+
+    def verify_password(self, password: str):
+        return pwd_context.verify(password, self.password)
+
+    def hash_password(self):
+        self.password = pwd_context.hash(self.password)
+
+@event.listens_for(User, 'before_insert')
+def hash_password_before_insert(_mapper, connection, target):
+    if target.password:
+        target.hash_password()
 
 class Experiment(Base):
     __tablename__ = "experiments"
