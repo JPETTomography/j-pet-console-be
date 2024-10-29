@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /app/backend/
 
 RUN apt-get update && apt-get install -y kafkacat && rm -rf /var/likb/apt/lists/*
 RUN pip install fastapi uvicorn psycopg2-binary sqlalchemy kafka-python-ng faker sqladmin
