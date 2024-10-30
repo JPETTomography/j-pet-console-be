@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from database import models, database
+import database.models as models
+import database.database as database
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
-from utills.utills import generate_fake_user
+from backend.utills.utills import generate_fake_user
 from sqladmin import Admin
-from admin import UserAdmin, DataAdmin
+from backend.admin import UserAdmin, DataAdmin
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092')
 

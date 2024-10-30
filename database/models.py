@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, text, TIMESTAMP
-from database import Base
+from database.database import Base
 from sqlalchemy.dialects.postgresql import JSONB
 
 class User(Base):

@@ -1,4 +1,4 @@
-from models import User, Document
+from database.models import User, Document
 from sqladmin import ModelView
 
 class UserAdmin(ModelView, model=User):

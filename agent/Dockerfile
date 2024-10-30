@@ -1,11 +1,3 @@
-FROM python:3.11-slim
-
-# HOW TO:
-# Build image (from the directory containing dockerfile):
-# docker build --tag 'ubuntu-g4:22.04-11.03' .
-# Run container:
-# docker run -ti --rm ubuntu-g4:22.04-11.03 /bin/bash
-
 FROM ubuntu:22.04
 RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker
 RUN echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker
@@ -17,8 +9,10 @@ RUN DEBIAN_FRONTEND=noninteractive && \
   apt-get install -y cmake && \
   apt-get install -y git && \
   apt-get install -y curl && \
+  apt-get install -y kafkacat && \
+  apt-get install -y ffmpeg libsm6 libxext6 && \
   apt-get install -y ca-certificates && \
-  wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /opt/miniconda.sh && \
+  wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda3-py311_23.11.0-2-Linux-x86_64.sh -O /opt/miniconda.sh && \
   /bin/bash /opt/miniconda.sh -b -p /opt/conda
 
 ENV CONDA_DIR /opt/conda
@@ -26,8 +20,9 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 
 RUN conda init && \
     /bin/bash && \
-    conda install -y -c conda-forge libmamba libarchive gxx root
+    conda install -y -c conda-forge libmamba libarchive gxx root=6.28.0
 
-RUN pip install requests kafka-python-ng && apt-get update && apt-get install -y kafkacat
-WORKDIR /app/agent
-CMD ["./wait-for-kafka.sh", "python", "agent.py"]
+RUN pip install requests psycopg2-binary sqlalchemy kafka-python-ng && apt-get update && apt-get install -y kafkacat
+
+WORKDIR /app/
+CMD ["./common/wait-for-kafka.sh", "./agent/entrypoint.sh"]

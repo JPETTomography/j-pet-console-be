@@ -24,6 +24,5 @@ RUN conda init && \
 
 RUN pip install requests psycopg2-binary sqlalchemy kafka-python-ng && apt-get update && apt-get install -y kafkacat
 
-WORKDIR /app
-#CMD ["./common/wait-for-kafka.sh", "./worker/entrypoint.sh"]
-CMD ["ls"]
+WORKDIR /app/
+CMD ["./common/wait-for-kafka.sh", "./worker/entrypoint.sh"]

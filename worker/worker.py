@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../backend')
-#@TODO solve this, sqlalchemy is in backend but we use it here
 import time
 from kafka import KafkaConsumer
 import requests
@@ -11,10 +8,10 @@ import numpy as np
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from models import Document, Base
+import database.models as models
 
-import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+# import logging
+# logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 DATABASE_URI = "postgresql://user:password@postgres_db/mydatabase"
 #@TODO cover the source of the adresss
@@ -33,7 +30,7 @@ consumer = KafkaConsumer(
 def insert_document(title, data):
     session = Session()
     try:
-        new_document = Document(title=title, data=data)
+        new_document = models.Document(title=title, data=data)
         session.add(new_document)
         session.commit()
         print(f"Inserted document with title '{title}'")
@@ -44,7 +41,7 @@ def insert_document(title, data):
         session.close()
 
 def work_file(filename):
-    file = ROOT.TFile.Open("./dabc_17334031817.tslot.calib.root")
+    file = ROOT.TFile.Open("./data/dabc_17334031817.tslot.calib.root")
     tree = file.Get("TimeWindowCreator subtask 0 stats")
     llt = tree.Get("LL_per_PM")
     nbins = llt.GetNbinsX()
@@ -76,14 +73,9 @@ def receive_file_via_socket(sender_ip, sender_port, output_file):
 
 if __name__ == "__main__":
     for message in consumer:
-        print(message)
-        print(message.value)
-        print(type(message))
-        print(type(message.value))
         sender_info = message.value.decode("utf-8")
         sender_ip, sender_port = sender_info.split(":")
-
-        logging.debug(f"Received message with sender info: {sender_info}")
+        print(f"Received message with sender info: {sender_info}")
         filename = f"{uuid.uuid4()}.root"
         receive_file_via_socket(sender_ip, sender_port, filename)
         work_file(filename)

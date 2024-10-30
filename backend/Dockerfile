@@ -7,5 +7,4 @@ RUN pip install fastapi uvicorn psycopg2-binary sqlalchemy kafka-python-ng faker
 
 
 # @TODO this is deplo option CMD ["./wait-for-kafka.sh", "./entrypoint_no_reload.sh"]
-# CMD ["./common/wait-for-kafka.sh", "./backend/entrypoint.sh"]
-CMD ["cat", "docker-compose.yaml"]
+CMD ["./common/wait-for-kafka.sh", "./backend/entrypoint.sh"]
