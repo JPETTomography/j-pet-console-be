@@ -1,2 +1,2 @@
 #!/bin/sh
-python worker.py
+python worker/worker.py

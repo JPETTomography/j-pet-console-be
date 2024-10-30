@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 from models import Document, Base
 
 import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 DATABASE_URI = "postgresql://user:password@postgres_db/mydatabase"
 #@TODO cover the source of the adresss
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         sender_info = message.value.decode("utf-8")
         sender_ip, sender_port = sender_info.split(":")
 
-        print(f"Received message with sender info: {sender_info}")
+        logging.debug(f"Received message with sender info: {sender_info}")
         filename = f"{uuid.uuid4()}.root"
         receive_file_via_socket(sender_ip, sender_port, filename)
         work_file(filename)

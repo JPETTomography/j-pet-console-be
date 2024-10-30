@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-import models, database
+from database import models, database
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from utills.utills import generate_fake_user

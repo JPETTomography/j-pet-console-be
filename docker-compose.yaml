@@ -3,7 +3,8 @@ version: '3.8'
 services:
   web:
     build:
-      context: ./backend
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: fastapi_app
     ports:
       - "8000:8000"
@@ -44,10 +45,9 @@ services:
       - "2181:2181"
 
   worker:
-    environment:
-    - PYTHONUNBUFFERED=1
     build:
-      context: ./worker
+      context: .
+      dockerfile: ./worker/Dockerfile
     volumes:
       - ".:/app"
     container_name: kafka_worker
