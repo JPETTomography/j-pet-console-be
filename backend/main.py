@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 import database.database as database
 from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
-from backend.utills.utills import generate_fake_user
 from sqladmin import Admin
-from backend.admin import UserAdmin, DataAdmin
+from backend.admin import UserAdmin, DataAdmin, ExperimentAdmin
+from fastapi.security import OAuth2PasswordRequestForm
+from database.database import get_session_local
+from routers import users, experiments
+from auth import create_access_token
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092')
 
@@ -15,34 +17,29 @@ def send_message(topic, message):
     producer.flush()
 
 app = FastAPI()
-admin = Admin(app, database.engine)
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
 
+admin = Admin(app, database.engine)
 admin.add_view(UserAdmin)
 admin.add_view(DataAdmin)
+admin.add_view(ExperimentAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
 
 
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_session_local)):
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not user or not user.verify_password(form_data.password):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    access_token = create_access_token(data={"sub": user.id})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
-def get_session_local():
-    yield database.SessionLocal()
-
-@app.get("/users/")
-def read_users(db: Session = Depends(get_session_local)):
-    users = db.query(models.User).all()
-    return users
-
-@app.post("/create_sample_users/")
-# @TODO remove this later
-def create_sample_users(db: Session = Depends(get_session_local), amount: int = 0):
-    users = [generate_fake_user() for _ in range(amount)]
-    db.add_all(users)
-    db.commit()
-    return {"message": "Sample users created"}
-
 
 @app.post("/send_worker/")
 def send_message_worker(message: str):
