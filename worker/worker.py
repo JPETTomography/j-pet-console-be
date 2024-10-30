@@ -13,6 +13,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from models import Document, Base
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+
 DATABASE_URI = "postgresql://user:password@postgres_db/mydatabase"
 #@TODO cover the source of the adresss
 
@@ -26,10 +29,6 @@ consumer = KafkaConsumer(
     enable_auto_commit=True,
     group_id='worker-group'
 )
-
-for message in consumer:
-    with open("dump.log", "w") as f:
-        f.write(f"Received message: {message.value.decode('utf-8')}")
 
 def insert_document(title, data):
     session = Session()
@@ -59,7 +58,7 @@ def work_file(filename):
     insert_document(title, data)
 
 
-def receive_file_via_socket(sender_ip, sender_port, output_file):
+def receive_file_via_socket_tmp(sender_ip, sender_port, output_file):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.connect((sender_ip, int(sender_port)))
@@ -72,12 +71,20 @@ def receive_file_via_socket(sender_ip, sender_port, output_file):
     except Exception as e:
         print(f"Error occurred while receiving file: {e}")
 
-for message in consumer:
-    sender_info = message.value
-    sender_ip, sender_port = sender_info.split(":")
+def receive_file_via_socket(sender_ip, sender_port, output_file):
+    pass
 
-    print(f"Received message with sender info: {sender_info}")
-    filename = f"{uuid.uuid4()}.root"
-    receive_file_via_socket(sender_ip, sender_port, filename)
-    work_file(filename)
-consumer.close()
+if __name__ == "__main__":
+    for message in consumer:
+        print(message)
+        print(message.value)
+        print(type(message))
+        print(type(message.value))
+        sender_info = message.value.decode("utf-8")
+        sender_ip, sender_port = sender_info.split(":")
+
+        print(f"Received message with sender info: {sender_info}")
+        filename = f"{uuid.uuid4()}.root"
+        receive_file_via_socket(sender_ip, sender_port, filename)
+        work_file(filename)
+    consumer.close()

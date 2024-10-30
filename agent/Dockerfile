@@ -1,8 +1,5 @@
 FROM python:3.11-slim
 
-WORKDIR /app/agent
-
-
 # HOW TO:
 # Build image (from the directory containing dockerfile):
 # docker build --tag 'ubuntu-g4:22.04-11.03' .
@@ -32,4 +29,5 @@ RUN conda init && \
     conda install -y -c conda-forge libmamba libarchive gxx root
 
 RUN pip install requests kafka-python-ng && apt-get update && apt-get install -y kafkacat
+WORKDIR /app/agent
 CMD ["./wait-for-kafka.sh", "python", "agent.py"]

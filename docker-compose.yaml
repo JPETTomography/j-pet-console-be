@@ -44,6 +44,8 @@ services:
       - "2181:2181"
 
   worker:
+    environment:
+    - PYTHONUNBUFFERED=1
     build:
       context: ./worker
     volumes:
