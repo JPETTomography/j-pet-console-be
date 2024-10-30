@@ -1,5 +1,5 @@
 import faker
-from models import User
+from database.models import User
 
 generator = faker.Faker()
 

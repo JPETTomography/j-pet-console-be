@@ -3,7 +3,8 @@ version: '3.8'
 services:
   web:
     build:
-      context: ./app
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: fastapi_app
     ports:
       - "8000:8000"
@@ -11,7 +12,7 @@ services:
       - db
       - kafka
     volumes:
-      - "./app:/app"
+      - .:/app
     restart: on-failure
 
   db:
@@ -45,9 +46,10 @@ services:
 
   worker:
     build:
-      context: ./worker
+      context: .
+      dockerfile: ./worker/Dockerfile
     volumes:
-      - "./worker:/app"
+      - .:/app
     container_name: kafka_worker
     depends_on:
       - kafka
@@ -55,9 +57,10 @@ services:
 
   agent:
     build:
-      context: ./agent
+      context: ./
+      dockerfile: ./agent/Dockerfile
     volumes:
-      - "./agent:/app"
+      - .:/app
     container_name: kafka_agent
     depends_on:
       - kafka
