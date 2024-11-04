@@ -17,4 +17,3 @@ class ExperimentAdmin(ModelView, model=Experiment):
             "order_by": "name",
         }
     }
-a

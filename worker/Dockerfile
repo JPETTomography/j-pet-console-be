@@ -22,7 +22,7 @@ RUN conda init && \
     /bin/bash && \
     conda install -y -c conda-forge libmamba=1.5.8 libarchive=3.7.4 gxx=11.4.0 root=6.28.0
 
-RUN pip install requests psycopg2-binary==2.9.10 sqlalchemy==2.0.36 kafka-python-ng==2.2.3 && apt-get update && apt-get install -y kafkacat
+RUN pip install requests psycopg2-binary==2.9.10 sqlalchemy==2.0.36 passlib kafka-python-ng==2.2.3 && apt-get update && apt-get install -y kafkacat
 
 WORKDIR /app/
 CMD ["./common/wait-for-kafka.sh", "./worker/entrypoint.sh"]
