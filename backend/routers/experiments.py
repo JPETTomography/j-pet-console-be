@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
-from utills.utills import generate_fake_experiment
+from backend.utills.utills import generate_fake_experiment
 
 router = APIRouter()
 
