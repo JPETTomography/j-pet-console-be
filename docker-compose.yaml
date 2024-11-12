@@ -10,7 +10,9 @@ services:
       - "8000:8000"
     depends_on:
       - db
-      - kafka
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=rabbitmq
     volumes:
       - .:/app
     restart: on-failure
@@ -24,25 +26,34 @@ services:
       POSTGRES_DB: mydatabase
     ports:
       - "5432:5432"
-  kafka:
-    image: bitnami/kafka:3.8.0
-    container_name: kafka
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
+  # kafka:
+  #   image: bitnami/kafka:3.8.0
+  #   container_name: kafka
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     ALLOW_PLAINTEXT_LISTENER: "yes"
+  #   ports:
+  #     - "9092:9092"
+  #   depends_on:
+  #     - zookeeper
 
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: zookeeper
-    environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
+  rabbitmq:
+    image: rabbitmq:3-management
     ports:
-      - "2181:2181"
+      - "5672:5672"  # RabbitMQ default port
+      - "15672:15672" # RabbitMQ Management UI
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+  # zookeeper:
+  #   image: bitnami/zookeeper:latest
+  #   container_name: zookeeper
+  #   environment:
+  #     ALLOW_ANONYMOUS_LOGIN: "yes"
+  #   ports:
+  #     - "2181:2181"
 
   worker:
     build:
@@ -50,10 +61,12 @@ services:
       dockerfile: ./worker/Dockerfile
     volumes:
       - .:/app
-    container_name: kafka_worker
+    container_name: worker
     depends_on:
-      - kafka
+      - rabbitmq
       - web
+    environment:
+      - RABBITMQ_HOST=rabbitmq
 
   agent:
     build:
@@ -61,9 +74,11 @@ services:
       dockerfile: ./agent/Dockerfile
     volumes:
       - .:/app
-    container_name: kafka_agent
+    container_name: agent
     ports:
       - "12345:12345"
     depends_on:
-      - kafka
+      - rabbitmq
       - web
+    environment:
+      - RABBITMQ_HOST=rabbitmq

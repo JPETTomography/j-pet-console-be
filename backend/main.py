@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 import database.database as database
-from kafka import KafkaProducer
+import pika
 from sqladmin import Admin
 from backend.admin import UserAdmin, DataAdmin, ExperimentAdmin
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,12 +11,34 @@ from backend.routers import users, experiments
 from backend.auth import create_access_token
 import json
 
-producer = KafkaProducer(bootstrap_servers='kafka:9092')
-
-
+rabbitmq_host = "rabbitmq"
+credentials = pika.PlainCredentials('user', 'password')
+parameters = pika.ConnectionParameters(
+    rabbitmq_host,  # replace with RabbitMQ server IP if not local
+    5672,         # default RabbitMQ port
+    '/',
+    credentials
+)
+ 
 def send_message(topic, message):
-    producer.send(topic, message.encode('utf-8'))
-    producer.flush()
+    # Connect to RabbitMQ
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+    
+    # Declare a queue
+    channel.queue_declare(queue='task_queue', durable=True)
+    
+    # Publish a message
+    channel.basic_publish(
+        exchange='',
+        routing_key='agent_topic',
+        body=message,
+        properties=pika.BasicProperties(
+            delivery_mode=2,  # Make message persistent
+        ))
+    
+    print(f"Sent: {message}")
+    connection.close()
 
 
 app = FastAPI()

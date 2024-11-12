@@ -1,7 +1,7 @@
 import socket
 import json
 import argparse
-from kafka import KafkaConsumer
+import pika
 
 
 def receive_data(producer_info):
@@ -27,32 +27,38 @@ def receive_data(producer_info):
 
 TOPIC = "root_json"
 
+rabbitmq_host = "rabbitmq"
+credentials = pika.PlainCredentials('user', 'password')
+parameters = pika.ConnectionParameters(
+    rabbitmq_host,  # replace with RabbitMQ server IP if not local
+    5672,         # default RabbitMQ port
+    '/',
+    credentials
+)
 
-def start_consumer():
 
-    consumer = KafkaConsumer(
-        TOPIC,
-        bootstrap_servers=['kafka:9092'],
-        auto_offset_reset='earliest',
-        enable_auto_commit=True,
-        group_id='worker-group'
-    )
+def consume_messages():
+    # Connect to RabbitMQ
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
 
-    producer_info = None
-    try:
-        for message in consumer:
-            producer_info = json.loads(message.value.decode('utf-8'))
-            print(f"Received producer IP and port info: {producer_info}")
-            receive_data(producer_info)
+    # Declare the queue (make sure it exists)
+    channel.queue_declare(queue='worker_topic', durable=True)
+    # Set up consumer
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue='worker_topic', on_message_callback=callback)
 
-    finally:
-        # Ensure all uncommitted messages are committed before exiting
-        print("Committing offsets and closing consumer...")
-        consumer.commit()
-        consumer.close()
-        print("Consumer closed")
+    print("Waiting for messages...")
+    channel.start_consuming()
+
+def callback(ch, method, properties, body):
+    producer_info = json.loads(body.decode())
+    print(f"Received producer IP and port info: {producer_info}")
+    receive_data(producer_info)
+
+
 
 
 if __name__ == "__main__":
+    consume_messages()
 
-    start_consumer()
