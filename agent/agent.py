@@ -66,7 +66,7 @@ def send_data(json_data, host=HOST, port=PORT):
 
     connection_info = {"ip": HOST, "port": PORT}
     encoded_info = json.dumps(connection_info).encode('utf-8')
-    print("Sending connection info to Kafka...")
+    print("Sending connection info to Rabbit...")
     send_message("worker_topic", encoded_info)
     while True:
         connection, client_address = server_socket.accept()

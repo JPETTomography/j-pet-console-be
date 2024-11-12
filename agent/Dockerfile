@@ -9,7 +9,7 @@ RUN DEBIAN_FRONTEND=noninteractive && \
   apt-get install -y cmake && \
   apt-get install -y git && \
   apt-get install -y curl && \
-  apt-get install -y kafkacat && \
+  apt-get install -y netcat &&\
   apt-get install -y ffmpeg libsm6 libxext6 && \
   apt-get install -y ca-certificates && \
   wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda3-py311_23.11.0-2-Linux-x86_64.sh -O /opt/miniconda.sh && \
@@ -22,8 +22,7 @@ RUN conda init && \
     /bin/bash && \
     conda install -y -c conda-forge libmamba=1.5.8 libarchive=3.7.4 gxx=11.4.0 root=6.28.0
 
-# RUN pip install requests psycopg2-binary==2.9.10 passlib kafka-python-ng==2.2.3 && apt-get update && apt-get install -y kafkacat
-RUN pip install requests psycopg2-binary==2.9.10 passlib pika && apt-get update 
+RUN pip install requests psycopg2-binary==2.9.10 passlib pika && apt-get update
 
 WORKDIR /app/
-CMD ["./agent/entrypoint.sh"]
+CMD ["./common/wait-for-rabbit.sh","./agent/entrypoint.sh"]
