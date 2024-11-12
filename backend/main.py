@@ -7,7 +7,7 @@ from sqladmin import Admin
 from backend.admin import UserAdmin, DataAdmin, ExperimentAdmin
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
-from backend.routers import users, experiments
+from backend.routers import users, experiments,documents
 from backend.auth import create_access_token
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092')
@@ -19,6 +19,7 @@ def send_message(topic, message):
 app = FastAPI()
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
+app.include_router(documents.router, prefix="/documents", tags=["documents"])
 
 admin = Admin(app, database.engine)
 admin.add_view(UserAdmin)
