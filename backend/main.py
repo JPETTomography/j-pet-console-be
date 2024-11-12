@@ -8,7 +8,7 @@ from backend.admin import UserAdmin, DataAdmin, ExperimentAdmin
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
 from backend.routers import users, experiments
-from auth import create_access_token
+from backend.auth import create_access_token
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092')
 
