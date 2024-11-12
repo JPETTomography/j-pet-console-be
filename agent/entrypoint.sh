@@ -1,2 +1,2 @@
 #!/bin/sh
-python -m agent.agent
+python -u -m agent.agent

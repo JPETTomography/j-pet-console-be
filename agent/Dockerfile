@@ -25,4 +25,4 @@ RUN conda init && \
 RUN pip install requests psycopg2-binary==2.9.10 passlib kafka-python-ng==2.2.3 && apt-get update && apt-get install -y kafkacat
 
 WORKDIR /app/
-CMD ["./common/wait-for-kafka.sh", "./agent/entrypoint.sh"]
+CMD ["./agent/entrypoint.sh"]
