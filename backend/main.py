@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import database.models as models
 import database.database as database
@@ -19,6 +20,17 @@ def send_message(topic, message):
 app = FastAPI()
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
+
+origins = [
+    "http://localhost:3000", # local development
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 admin = Admin(app, database.engine)
 admin.add_view(UserAdmin)
