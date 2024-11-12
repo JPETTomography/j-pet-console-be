@@ -62,6 +62,8 @@ services:
     volumes:
       - .:/app
     container_name: kafka_agent
+    ports:
+      - "12345:12345"
     depends_on:
       - kafka
       - web
