@@ -1,82 +1,64 @@
-import time
-from kafka import KafkaConsumer
-import requests
 import socket
-import uuid
-import ROOT
-import numpy as np
+import json
+import argparse
+import pika
 
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-import database.models as models
 
-# import logging
-# logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+def receive_data(producer_info):
 
-DATABASE_URI = "postgresql://user:password@postgres_db/mydatabase"
-#@TODO cover the source of the adresss
+    producer_ip = producer_info['ip']
+    producer_port = producer_info['port']
 
-engine = create_engine(DATABASE_URI)
-Session = sessionmaker(bind=engine)
+    # Connect to the producer’s socket server to receive JSON data
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+        client_socket.connect((producer_ip, producer_port))
+        print(f"Connected to producer at {producer_ip}:{producer_port}")
 
-consumer = KafkaConsumer(
-    'worker_topic',
-    bootstrap_servers=['kafka:9092'],
-    auto_offset_reset='earliest',
-    enable_auto_commit=True,
-    group_id='worker-group'
+        buffer = ""
+        # Receive JSON data
+        while True:
+            data = client_socket.recv(4096).decode('utf-8')
+            if not data:
+                break
+            buffer += data
+        json_data = json.loads(buffer)
+        print("Received JSON data:", json.dumps(json_data, indent=2))
+
+
+TOPIC = "root_json"
+
+rabbitmq_host = "rabbitmq"
+credentials = pika.PlainCredentials('user', 'password')
+parameters = pika.ConnectionParameters(
+    rabbitmq_host,  # replace with RabbitMQ server IP if not local
+    5672,         # default RabbitMQ port
+    '/',
+    credentials
 )
 
-def insert_document(title, data):
-    session = Session()
-    try:
-        new_document = models.Document(title=title, data=data)
-        session.add(new_document)
-        session.commit()
-        print(f"Inserted document with title '{title}'")
-    except Exception as e:
-        session.rollback()
-        print(f"Failed to insert document: {e}")
-    finally:
-        session.close()
 
-def work_file(filename):
-    file = ROOT.TFile.Open("./data/dabc_17334031817.tslot.calib.root")
-    tree = file.Get("TimeWindowCreator subtask 0 stats")
-    llt = tree.Get("LL_per_PM")
-    nbins = llt.GetNbinsX()
-    x = [llt.GetBinCenter(i) for i in range(1, nbins + 1)]
-    y = [llt.GetBinContent(i) for i in range(1, nbins + 1)]
-    title="Unstructured Data Example"
-    data={
-        "x": x,
-        "y": y,
-    }
-    insert_document(title, data)
+def consume_messages():
+    # Connect to RabbitMQ
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+
+    # Declare the queue (make sure it exists)
+    channel.queue_declare(queue='worker_topic', durable=True)
+    # Set up consumer
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue='worker_topic', on_message_callback=callback)
+
+    print("Waiting for messages...")
+    channel.start_consuming()
+
+def callback(ch, method, properties, body):
+    producer_info = json.loads(body.decode())
+    print(f"Received producer IP and port info: {producer_info}")
+    receive_data(producer_info)
 
 
-def receive_file_via_socket_tmp(sender_ip, sender_port, output_file):
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-            client_socket.connect((sender_ip, int(sender_port)))
-            with open(output_file, 'wb') as f:
-                while True:
-                    data = client_socket.recv(1024)
-                    if not data:
-                        break
-                    f.write(data)
-    except Exception as e:
-        print(f"Error occurred while receiving file: {e}")
 
-def receive_file_via_socket(sender_ip, sender_port, output_file):
-    pass
 
 if __name__ == "__main__":
-    for message in consumer:
-        sender_info = message.value.decode("utf-8")
-        sender_ip, sender_port = sender_info.split(":")
-        print(f"Received message with sender info: {sender_info}")
-        filename = f"{uuid.uuid4()}.root"
-        receive_file_via_socket(sender_ip, sender_port, filename)
-        work_file(filename)
-    consumer.close()
+    consume_messages()
+
