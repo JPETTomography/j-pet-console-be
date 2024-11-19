@@ -17,11 +17,6 @@ class User(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     experiments = relationship("Experiment", back_populates="owner")
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if "password" in kwargs:
-            self.hash_password()
-
     def verify_password(self, password: str):
         return pwd_context.verify(password, self.password)
 
