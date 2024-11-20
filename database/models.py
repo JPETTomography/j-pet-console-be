@@ -53,6 +53,13 @@ class Experiment(Base):
     detector_id = Column(Integer, ForeignKey("detectors.id"), nullable=False)
     detector = relationship("Detector", back_populates="experiments")
 
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+
 class Document(Base):
     __tablename__ = 'documents'
 

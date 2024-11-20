@@ -1,6 +1,6 @@
 from datetime import timedelta
 import faker
-from database.models import User, Detector, Experiment
+from database.models import User, Detector, Experiment, Tag
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -37,4 +37,13 @@ def generate_fake_experiment(db: Session):
         end_date=end_date,
         coordinator_id=get_random_user(db).id,
         detector_id=get_random_detector(db).id
+    )
+
+def get_random_tag(db: Session):
+    return db.query(Tag).order_by(func.random()).first()
+
+def generate_fake_tag():
+    return Tag(
+        name=generator.word.adjective(),
+        description=generator.text(max_nb_chars=200),
     )

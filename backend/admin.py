@@ -1,4 +1,4 @@
-from database.models import User, Detector, Experiment, Document
+from database.models import User, Detector, Experiment, Tag, Document
 from sqladmin import ModelView
 
 class UserAdmin(ModelView, model=User):
@@ -22,6 +22,10 @@ class ExperimentAdmin(ModelView, model=Experiment):
             "order_by": "name",
         }
     }
+
+class TagAdmin(ModelView, model=Tag):
+    column_searchable_list = [Tag.name]
+    column_list = [Tag.name, Tag.description]
 
 class DataAdmin(ModelView, model=Document):
     column_list = [Document.id, Document.title, Document.data]
