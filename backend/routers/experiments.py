@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.get("/")
 def read_experiments(db: Session = Depends(get_session_local)):
-    return db.query(models.Experiment).options(selectinload(models.Experiment.owner).load_only(models.User.name)).all()
+    return db.query(models.Experiment).options(selectinload(models.Experiment.coordinator).load_only(models.User.name)).all()
 
 @router.get("/{id}")
 def read_experiment(id: str, db: Session = Depends(get_session_local)):

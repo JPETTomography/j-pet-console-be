@@ -15,7 +15,7 @@ class User(Base):
     email = Column(String, unique=True, nullable = False)
     password = Column(String, nullable = False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
-    experiments = relationship("Experiment", back_populates="owner")
+    experiments = relationship("Experiment", back_populates="coordinator")
 
     def verify_password(self, password: str):
         return pwd_context.verify(password, self.password)
@@ -39,8 +39,8 @@ class Experiment(Base):
     location = Column(String, nullable=False)
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
     end_date = Column(TIMESTAMP(timezone=True))
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    owner = relationship("User", back_populates="experiments")
+    coordinator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    coordinator = relationship("User", back_populates="experiments")
 
 class Document(Base):
     __tablename__ = 'documents'

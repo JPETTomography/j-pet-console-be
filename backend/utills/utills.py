@@ -24,5 +24,5 @@ def generate_fake_experiment(db: Session):
         location=generator.city(),
         start_date=start_date,
         end_date=end_date,
-        owner_id=get_random_user(db).id
+        coordinator_id=get_random_user(db).id
     )

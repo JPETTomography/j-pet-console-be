@@ -9,10 +9,10 @@ class DataAdmin(ModelView, model=Document):
     column_list = [Document.id, Document.title, Document.data]
 
 class ExperimentAdmin(ModelView, model=Experiment):
-    column_list = [Experiment.name, Experiment.description, "owner.name", Experiment.status]
-    column_labels = {"owner.name": "Owner"}
+    column_list = [Experiment.name, Experiment.description, "coordinator.name", Experiment.status]
+    column_labels = {"coordinator.name": "Coordinator"}
     form_ajax_refs = {
-        "owner": {
+        "coordinator": {
             "fields": ("name",),
             "order_by": "name",
         }
