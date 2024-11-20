@@ -22,7 +22,7 @@ RUN conda init && \
     /bin/bash && \
     conda install -y -c conda-forge libmamba=1.5.8 libarchive=3.7.4 gxx=11.4.0 root=6.28.0
 
-RUN pip install requests psycopg2-binary==2.9.10 passlib pika && apt-get update
+RUN pip install requests psycopg2-binary==2.9.10 watchdog==3.0.0 passlib pika && apt-get update
 
 WORKDIR /app/
 CMD ["./common/wait-for-rabbit.sh","./agent/entrypoint.sh"]
