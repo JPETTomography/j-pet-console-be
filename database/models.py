@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, text, TIMESTAMP, ForeignKey, event
+from sqlalchemy import Column, Boolean, Integer, Float, String, text, TIMESTAMP, ForeignKey, event
 from sqlalchemy.orm import relationship
 from database.database import Base
 from sqlalchemy.dialects.postgresql import JSONB
@@ -90,18 +90,19 @@ class Measurement(Base):
     tag = relationship("Tag", back_populates="measurements")
     radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
     radioisotope = relationship("Radioisotope", back_populates="measurements")
+    documents = relationship("Document", back_populates="measurement")
 
 class Document(Base):
     __tablename__ = 'documents'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(100), nullable=False)
-    data = Column(JSONB)
-
-class Detector(Base):
-    __tablename__ = "detectors"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    status = Column(String, nullable=False)
-    agent_code = Column(String, nullable=False)
+    histo_dir = Column(String, nullable=False)
+    daq_time = Column(TIMESTAMP(timezone=True), nullable=False)
+    agent_time = Column(TIMESTAMP(timezone=True), nullable=False)
+    reco_finish = Column(TIMESTAMP(timezone=True), nullable=False)
+    observable_evt_num = Column(Integer, nullable=False)
+    is_correct = Column(Boolean, default=False)
+    data = Column(JSONB)
+    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement = relationship("Measurement", back_populates="documents")

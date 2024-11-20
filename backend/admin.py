@@ -42,6 +42,6 @@ class MeasurementAdmin(ModelView, model=Measurement):
         },
     }
 
-
-class DataAdmin(ModelView, model=Document):
-    column_list = [Document.id, Document.title, Document.data]
+class DocumentAdmin(ModelView, model=Document):
+    column_searchable_list = [Document.name]
+    column_list = [Document.name, Document.is_correct, Document.data]
