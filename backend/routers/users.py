@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
 from backend.utills.utills import generate_fake_user
+
 router = APIRouter()
 
 @router.get("/")
