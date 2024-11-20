@@ -1,6 +1,6 @@
 from datetime import timedelta
 import faker
-from database.models import User, Detector, Experiment, Tag
+from database.models import User, Detector, Experiment, Tag, Radioisotope
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -46,4 +46,15 @@ def generate_fake_tag():
     return Tag(
         name=generator.word.adjective(),
         description=generator.text(max_nb_chars=200),
+    )
+
+def get_random_radioisotope(db: Session):
+    return db.query(Radioisotope).order_by(func.random()).first()
+
+def generate_fake_radioisotope():
+    return Radioisotope(
+        name=generator.catch_phrase(),
+        description=generator.text(max_nb_chars=200),
+        activity=float(random.random()),
+        halftime=float(random.random())
     )

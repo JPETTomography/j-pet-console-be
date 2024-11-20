@@ -1,4 +1,4 @@
-from database.models import User, Detector, Experiment, Tag, Document
+from database.models import User, Detector, Experiment, Tag, Radioisotope, Document
 from sqladmin import ModelView
 
 class UserAdmin(ModelView, model=User):
@@ -26,6 +26,10 @@ class ExperimentAdmin(ModelView, model=Experiment):
 class TagAdmin(ModelView, model=Tag):
     column_searchable_list = [Tag.name]
     column_list = [Tag.name, Tag.description]
+
+class RadioisotopeAdmin(ModelView, model=Radioisotope):
+    column_searchable_list = [Radioisotope.name]
+    column_list = [Radioisotope.name, Radioisotope.description, Radioisotope.activity, Radioisotope.halftime]
 
 class DataAdmin(ModelView, model=Document):
     column_list = [Document.id, Document.title, Document.data]

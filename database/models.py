@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, text, TIMESTAMP, ForeignKey, event
+from sqlalchemy import Column, Integer, Float, String, text, TIMESTAMP, ForeignKey, event
 from sqlalchemy.orm import relationship
 from database.database import Base
 from sqlalchemy.dialects.postgresql import JSONB
@@ -59,6 +59,15 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+
+class Radioisotope(Base):
+    __tablename__ = "radioisotopes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    activity = Column(Float, nullable=False)
+    halftime = Column(Float, nullable=False)
 
 class Document(Base):
     __tablename__ = 'documents'
