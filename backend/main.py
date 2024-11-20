@@ -5,10 +5,10 @@ import database.models as models
 import database.database as database
 import pika
 from sqladmin import Admin
-from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, TagAdmin, RadioisotopeAdmin, DataAdmin
+from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, TagAdmin, RadioisotopeAdmin, MeasurementAdmin, DataAdmin
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
-from backend.routers import users, detectors, experiments, tags, radioisotopes
+from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements
 from backend.auth import create_access_token
 import json
 from pydantic import BaseModel
@@ -51,6 +51,7 @@ app.include_router(detectors.router, prefix="/detectors", tags=["detectors"])
 app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
 app.include_router(tags.router, prefix="/tags", tags=["tags"])
 app.include_router(radioisotopes.router, prefix="/radioisotopes", tags=["radioisotopes"])
+app.include_router(measurements.router, prefix="/measurements", tags=["measurements"])
 
 origins = [
     "http://localhost:3000", # local development
@@ -69,6 +70,7 @@ admin.add_view(DetectorAdmin)
 admin.add_view(ExperimentAdmin)
 admin.add_view(TagAdmin)
 admin.add_view(RadioisotopeAdmin)
+admin.add_view(MeasurementAdmin)
 admin.add_view(DataAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)

@@ -16,6 +16,7 @@ class User(Base):
     password = Column(String, nullable = False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     experiments = relationship("Experiment", back_populates="coordinator")
+    measurements = relationship("Measurement", back_populates="shifter")
 
     def verify_password(self, password: str):
         return pwd_context.verify(password, self.password)
@@ -52,6 +53,7 @@ class Experiment(Base):
     coordinator = relationship("User", back_populates="experiments")
     detector_id = Column(Integer, ForeignKey("detectors.id"), nullable=False)
     detector = relationship("Detector", back_populates="experiments")
+    measurements = relationship("Measurement", back_populates="experiment")
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -59,6 +61,7 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+    measurements = relationship("Measurement", back_populates="tag")
 
 class Radioisotope(Base):
     __tablename__ = "radioisotopes"
@@ -68,6 +71,25 @@ class Radioisotope(Base):
     description = Column(String, nullable=False)
     activity = Column(Float, nullable=False)
     halftime = Column(Float, nullable=False)
+    measurements = relationship("Measurement", back_populates="radioisotope")
+
+class Measurement(Base):
+    __tablename__ = "measurements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    directory = Column(String, nullable=False)
+    number_of_files = Column(Integer, nullable=False)
+    patient_reference = Column(String, nullable=False)
+    shifter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    shifter = relationship("User", back_populates="measurements")
+    experiment_id = Column(Integer, ForeignKey("experiments.id"), nullable=False)
+    experiment = relationship("Experiment", back_populates="measurements")
+    tag_id = Column(Integer, ForeignKey("tags.id"))
+    tag = relationship("Tag", back_populates="measurements")
+    radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
+    radioisotope = relationship("Radioisotope", back_populates="measurements")
 
 class Document(Base):
     __tablename__ = 'documents'
