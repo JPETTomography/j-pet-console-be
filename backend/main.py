@@ -5,10 +5,10 @@ import database.models as models
 import database.database as database
 import pika
 from sqladmin import Admin
-from backend.admin import UserAdmin, DataAdmin, ExperimentAdmin
+from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, DataAdmin
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
-from backend.routers import users, experiments
+from backend.routers import users, detectors, experiments
 from backend.auth import create_access_token
 import json
 from pydantic import BaseModel
@@ -47,8 +47,8 @@ def send_message(topic, message):
 
 app = FastAPI()
 app.include_router(users.router, prefix="/users", tags=["users"])
-app.include_router(experiments.router,
-                   prefix="/experiments", tags=["experiments"])
+app.include_router(detectors.router, prefix="/detectors", tags=["detectors"])
+app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
 
 origins = [
     "http://localhost:3000", # local development
@@ -63,8 +63,9 @@ app.add_middleware(
 
 admin = Admin(app, database.engine)
 admin.add_view(UserAdmin)
-admin.add_view(DataAdmin)
+admin.add_view(DetectorAdmin)
 admin.add_view(ExperimentAdmin)
+admin.add_view(DataAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
 

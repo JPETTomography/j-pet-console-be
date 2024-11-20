@@ -28,6 +28,15 @@ def hash_password_before_insert(_mapper, connection, target):
     if target.password:
         target.hash_password()
 
+class Detector(Base):
+    __tablename__ = "detectors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    agent_ip = Column(String, nullable=False)
+    experiments = relationship("Experiment", back_populates="detector")
 
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -41,6 +50,8 @@ class Experiment(Base):
     end_date = Column(TIMESTAMP(timezone=True))
     coordinator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     coordinator = relationship("User", back_populates="experiments")
+    detector_id = Column(Integer, ForeignKey("detectors.id"), nullable=False)
+    detector = relationship("Detector", back_populates="experiments")
 
 class Document(Base):
     __tablename__ = 'documents'
