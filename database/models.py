@@ -31,12 +31,14 @@ def hash_password_before_insert(_mapper, connection, target):
 
 class Experiment(Base):
     __tablename__ = "experiments"
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     status = Column(String, nullable=False)
+    location = Column(String, nullable=False)
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
-    end_date = Column(TIMESTAMP(timezone=True), nullable=False)
+    end_date = Column(TIMESTAMP(timezone=True))
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="experiments")
 

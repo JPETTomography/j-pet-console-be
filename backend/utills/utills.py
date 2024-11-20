@@ -15,12 +15,13 @@ def generate_fake_user():
 
 def generate_fake_experiment(db: Session):
     start_date = generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None)
-    end_date = start_date + timedelta(days=random.randint(1, 30))
+    end_date = random.choice([start_date + timedelta(days=random.randint(1, 30)), None])
 
     return Experiment(
         name=generator.catch_phrase(),
         description=generator.text(max_nb_chars=200),
-        status=random.choice(["active", "completed", "pending", "failed"]),
+        status=random.choice(["draft", "ongoing", "closed", "archived"]),
+        location=generator.city(),
         start_date=start_date,
         end_date=end_date,
         owner_id=get_random_user(db).id
