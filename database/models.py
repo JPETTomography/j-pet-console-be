@@ -53,7 +53,7 @@ class Document(Base):
     data = Column(JSONB)
 
 class Detector(Base):
-    __tablename__ = "experiments"
+    __tablename__ = "detectors"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)

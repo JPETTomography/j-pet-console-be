@@ -5,6 +5,7 @@ import json
 import pika
 import yaml
 import time
+import uuid
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -58,36 +59,29 @@ def send_message(topic, message):
 #     channel.start_consuming()
 
 
-def send_data(json_data, host=HOST, port=PORT):
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((host, port))
-    server_socket.listen(5)
-    print(f"Server listening on {host}:{port}...")
-    logging.info(f"Server listening on {host}:{port}...")
-    with open("server_info.json", "w") as f:
-        f.write(f"Server listening on {host}:{port}...")
-
-    connection_info = {"ip": HOST, "port": PORT}
+def send_data(json_data, socket):
+    connection_info = {"ip": HOST, "port": PORT, "uuid": str(uuid.uuid4())}
     encoded_info = json.dumps(connection_info).encode("utf-8")
     print("Sending connection info to Rabbit...")
     send_message("worker_topic", encoded_info)
     while True:
-        connection, client_address = server_socket.accept()
+        connection, client_address = socket.accept()
         try:
             print(f"Connection established with {client_address}")
             encoded_data = json.dumps(json_data).encode("utf-8")
             connection.sendall(encoded_data)
         finally:
             connection.close()
+            break
             print(f"Connection with {client_address} closed.")
 
 
-def process_file(root_file_path, hist_def):
+def process_file(root_file_path, hist_def, socket):
     # hist_def = "examplary_data/histo_description.json"
     # root_file_path = "examplary_data/2024_02_14_14_57_dabc_24043183007.root"
     print("reading_data")
     root_json_data = root_file_to_json(hist_def, root_file_path)
-    send_data(root_json_data)
+    send_data(root_json_data, socket)
 
 
 def read_config(filepath):
@@ -97,30 +91,52 @@ def read_config(filepath):
 
 
 class NewFileHandler(FileSystemEventHandler):
-    def __init__(self, agent_config):
-        self.agent_config = agent_config
+    def __init__(self, hist_def):
+        self.hist_def = hist_def
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((HOST, PORT))
+        self.server_socket.listen(5)
+        print(f"Server listening on {HOST}:{PORT}...")
+        logging.info(f"Server listening on {HOST}:{PORT}...")
 
     def on_created(self, event):
-        if not event.is_directory:
-            print(f"New file detected: {event.src_path}")
-            self.on_new_file_callback(
-                root_file_path=event.src_path,
-                hist_def=self.agent_config.hist_def
-            )
+        print("TRIGGERED!")
+        try:
+            if not event.is_directory:
+                time.sleep(1)
+                print(f"New file detected: {event.src_path}")
+                process_file(
+                    root_file_path=event.src_path,
+                    hist_def=self.hist_def,
+                    socket=self.server_socket,
+                )
+                print("FINISHED!")
+        except Exception as e:
+            print(f"Error processing file {event.src_path}: {e}")
+        print("exiting on_created")
+
 
 
 if __name__ == "__main__":
     # consume_messages()
-    config = read_config("./examplary_config.yaml")
-    event_handler = NewFileHandler(agent_config=config)
+    config = read_config("./agent/examplary_config.yaml")
+    hist_def = config['detector']['hist_def']
+    event_handler = NewFileHandler(hist_def=hist_def)
     observer = Observer()
-    path_to_watch = config["detector"]
+    path_to_watch = config["detector"]['path_to_watch']
+    # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
     observer.schedule(event_handler, path=path_to_watch, recursive=False)
+    from watchdog.events import LoggingEventHandler
+    # observer.schedule(LoggingEventHandler(), path=path_to_watch, recursive=False)
     observer.start()
     print(f"Watching folder: {path_to_watch}")
 
     try:
         while True:
+            if not observer.is_alive():
+                logging.error("Observer has stopped. Exiting...")
+                break
+            print("Agent is running...", time.ctime())
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()

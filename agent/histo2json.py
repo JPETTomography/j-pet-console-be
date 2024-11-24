@@ -61,6 +61,7 @@ def root_file_to_json(histo_def_file, file_name):
         "histogram": []}
     histo_json = root_to_json(histo_list, root_file)
     histo_json_all["histogram"].append(histo_json)
+    root_file.Close()
     return histo_json_all
 
 if __name__ == "__main__":
