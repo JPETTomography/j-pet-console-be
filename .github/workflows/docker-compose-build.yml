@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - JPC-44-compose-automatic-deployment
   pull_request:
 
 jobs:
