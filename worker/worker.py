@@ -15,6 +15,7 @@ def receive_data(producer_ip: str, producer_port: str) -> dict:
         client_socket.connect((producer_ip, producer_port))
         print(f"Connected to producer at {producer_ip}:{producer_port}")
         buffer = ""
+        client_socket.settimeout(15)
         while True:
             data = client_socket.recv(4096).decode('utf-8')
             if not data:
@@ -45,11 +46,12 @@ def consume_messages():
     print("Waiting for messages...")
     channel.start_consuming()
 
-def save_data_to_db(json_data):
+def save_data_to_db(json_data, agent_code):
     session = get_session_local()
     title = json_data['file']
     data = json_data['histogram']
     try:
+        # @TODO cover the agent_code field
         new_document = Document(title=title, data=data)
         session.add(new_document)
         session.commit()
@@ -64,13 +66,16 @@ def save_data_to_db(json_data):
 def callback(ch, method, properties, body):
     producer_info = json.loads(body.decode())
     address, port = producer_info['ip'], producer_info['port']
+    agent_code = producer_info['agent_code']
     print(f"Received producer IP and port info: {producer_info}")
     try:
         json_data = receive_data(address, port)
     except ConnectionRefusedError:
         print(f"Connection to producer at {address}:{port} refused")
+    except socket.timeout:
+        print("No data received within 15 seconds. Exiting.")
     else:
-        save_data_to_db(json_data)
+        save_data_to_db(json_data, agent_code)
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
     print("DONE!")
