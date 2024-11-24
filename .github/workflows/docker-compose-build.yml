@@ -6,7 +6,8 @@ on:
       - main
       - JPC-44-compose-automatic-deployment
   pull_request:
-    - main
+    branches:
+      - main
 
 jobs:
   build:
