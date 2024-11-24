@@ -51,3 +51,11 @@ class Document(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(100), nullable=False)
     data = Column(JSONB)
+
+class Detector(Base):
+    __tablename__ = "detectors"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    agent_code = Column(String, nullable=False)

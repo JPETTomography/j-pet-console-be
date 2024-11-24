@@ -11,6 +11,9 @@ from database.database import get_session_local
 from backend.routers import users, experiments
 from backend.auth import create_access_token
 import json
+from pydantic import BaseModel
+from database.models import Detector
+import uuid
 
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials('user', 'password')
@@ -93,3 +96,36 @@ def send_message_worker(message: str):
 def send_message_agent(message: str):
     send_message('agent_topic', json.dumps({"task": "add_random_test_data"}))
     return {"message": "Message sent"}
+
+# Pydantic Model for input validation
+class DetectorCreate(BaseModel):
+    name: str
+    description: str
+    status: str
+    agent_code: str
+
+
+@app.post("/detectors/", response_model=dict)
+def create_detector(detector: DetectorCreate, db: Session = Depends(get_session_local)):
+    agent_code = uuid.uuid4().hex
+    new_detector = Detector(
+        name=detector.name,
+        description=detector.description,
+        status=detector.status,
+        agent_code=agent_code,
+    )
+    try:
+        db.add(new_detector)
+        db.commit()
+        db.refresh(new_detector)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create detector")
+
+    return {
+        "id": new_detector.id,
+        "name": new_detector.name,
+        "description": new_detector.description,
+        "status": new_detector.status,
+        "agent_code": new_detector.agent_code,
+    }

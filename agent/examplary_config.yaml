@@ -1,0 +1,4 @@
+detector:
+  agent_code: "550e8400-e29b-41d4-a716-446655440000"
+  hist_def: "examplary_data/histo_description.json"
+  path_to_watch: "examplary_data/"
