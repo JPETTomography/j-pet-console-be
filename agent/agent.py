@@ -9,7 +9,8 @@ import uuid
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# HOSTNAME = 'localhost'
+
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 HOST = "agent"
 PORT = 12345
 TOPIC = "root_json"
@@ -18,22 +19,17 @@ TOPIC = "root_json"
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials("user", "password")
 parameters = pika.ConnectionParameters(
-    rabbitmq_host,  # replace with RabbitMQ server IP if not local
-    5672,  # default RabbitMQ port
+    rabbitmq_host,
+    5672,
     "/",
     credentials,
 )
 
 
 def send_message(topic, message):
-    # Connect to RabbitMQ
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
-
-    # Declare a queue
     channel.queue_declare(queue="task_queue", durable=True)
-
-    # Publish a message
     channel.basic_publish(
         exchange="",
         routing_key="worker_topic",
@@ -42,7 +38,6 @@ def send_message(topic, message):
             delivery_mode=2,  # Make message persistent
         ),
     )
-
     print(f"Sent: {message}")
     connection.close()
 
@@ -97,7 +92,6 @@ class NewFileHandler(FileSystemEventHandler):
         self.server_socket.bind((HOST, PORT))
         self.server_socket.listen(5)
         print(f"Server listening on {HOST}:{PORT}...")
-        logging.info(f"Server listening on {HOST}:{PORT}...")
 
     def on_created(self, event):
         print("TRIGGERED!")
@@ -116,7 +110,6 @@ class NewFileHandler(FileSystemEventHandler):
         print("exiting on_created")
 
 
-
 if __name__ == "__main__":
     # consume_messages()
     config = read_config("./agent/examplary_config.yaml")
@@ -124,19 +117,14 @@ if __name__ == "__main__":
     event_handler = NewFileHandler(hist_def=hist_def)
     observer = Observer()
     path_to_watch = config["detector"]['path_to_watch']
-    # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
     observer.schedule(event_handler, path=path_to_watch, recursive=False)
-    from watchdog.events import LoggingEventHandler
-    # observer.schedule(LoggingEventHandler(), path=path_to_watch, recursive=False)
     observer.start()
     print(f"Watching folder: {path_to_watch}")
-
     try:
         while True:
             if not observer.is_alive():
                 logging.error("Observer has stopped. Exiting...")
                 break
-            print("Agent is running...", time.ctime())
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()

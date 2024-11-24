@@ -4,15 +4,17 @@ import argparse
 import pika
 from database.database import get_session_local
 from database.models import Document
+import logging
+
+# uncomment to debug
+# logging.basicConfig(level=logging.DEBUG)
 
 
 def receive_data(producer_ip: str, producer_port: str) -> dict:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect((producer_ip, producer_port))
         print(f"Connected to producer at {producer_ip}:{producer_port}")
-
         buffer = ""
-        # Receive JSON data
         while True:
             data = client_socket.recv(4096).decode('utf-8')
             if not data:
@@ -20,7 +22,6 @@ def receive_data(producer_ip: str, producer_port: str) -> dict:
             buffer += data
         json_data = json.loads(buffer)
         print("Received JSON data:", json.dumps(json_data, indent=2))
-
     return json_data
 
 
@@ -29,26 +30,18 @@ TOPIC = "root_json"
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials('user', 'password')
 parameters = pika.ConnectionParameters(
-    rabbitmq_host,  # replace with RabbitMQ server IP if not local
-    5672,         # default RabbitMQ port
+    rabbitmq_host,
+    5672,
     '/',
     credentials
 )
-import logging
-logging.basicConfig(level=logging.DEBUG)
 
 def consume_messages():
-    # Connect to RabbitMQ
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
-
-    # Declare the queue (make sure it exists)
     channel.queue_declare(queue='worker_topic', durable=True)
-    # Set up consumer
     channel.basic_qos(prefetch_count=1)
-
     channel.basic_consume(queue='worker_topic', on_message_callback=callback)
-
     print("Waiting for messages...")
     channel.start_consuming()
 
@@ -81,9 +74,6 @@ def callback(ch, method, properties, body):
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
     print("DONE!")
-
-
-
 
 
 if __name__ == "__main__":
