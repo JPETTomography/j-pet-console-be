@@ -24,3 +24,31 @@ jobs:
 
       - name: Build Docker Compose services
         run: docker-compose -f docker-compose.yaml build
+
+
+      # Step 3: Set up OpenVPN
+      - name: Set up OpenVPN
+        run: |
+          sudo apt-get update && sudo apt-get install -y openvpn
+          echo "${{ secrets.OPENVPN_CONFIG }}" > openvpn-config.ovpn
+          echo "${{ secrets.OPENVPN_KEY }}" > vpn.key
+          sudo openvpn --config openvpn-config.ovpn --daemon
+        env:
+          OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+
+      # Step 4: Set up SSH tunnel
+      - name: Set up SSH tunnel
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
+          chmod 600 ssh_key
+          ssh -i ssh_key -o StrictHostKeyChecking=no -L 2375:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }} -N &
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          REMOTE_SERVER
+
+      # Step 5: Build and deploy Docker Compose services
+      - name: Deploy Docker Compose stack
+        run: |
+          export DOCKER_HOST=tcp://localhost:2375
+          docker-compose -f docker-compose.yaml up -d
