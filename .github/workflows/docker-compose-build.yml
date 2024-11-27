@@ -30,11 +30,13 @@ jobs:
       - name: Set up OpenVPN
         run: |
           sudo apt-get update && sudo apt-get install -y openvpn
-          echo "${{ secrets.OPENVPN_CONFIG }}" > openvpn-config.ovpn
-          echo "${{ secrets.OPENVPN_KEY }}" > vpn.key
+          echo "${{ vars.OPENVPN_CONFIG }}" > openvpn-config.ovpn
+          echo "${{ secrets.OPENVPN_KEY }}" > openvpn.key
+          echo "${{ secrets.OPENVPN_CERT }}" > openvpn.crt
+          echo "${{ secrets.OPENVPN_CA }}" > ca.crt
           sudo openvpn --config openvpn-config.ovpn --daemon
         env:
-          OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+          OPENVPN_CONFIG: ${{ vars.OPENVPN_CONFIG }}
 
       # Step 4: Set up SSH tunnel
       - name: Set up SSH tunnel
