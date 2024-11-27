@@ -50,6 +50,9 @@ def generate_fake_experiment(db: Session):
 def get_random_tag(db: Session):
     return db.query(Tag).order_by(func.random()).first()
 
+def get_random_tags(db: Session, amount = 1):
+    return db.query(Tag).order_by(func.random()).limit(amount).all()
+
 def generate_fake_tag():
     return Tag(
         name=generator.catch_phrase().partition(" ")[0],
@@ -58,6 +61,9 @@ def generate_fake_tag():
 
 def get_random_radioisotope(db: Session):
     return db.query(Radioisotope).order_by(func.random()).first()
+
+def get_random_radioisotopes(db: Session, amount = 1):
+    return db.query(Radioisotope).order_by(func.random()).limit(amount).all()
 
 def generate_fake_radioisotope():
     return Radioisotope(
@@ -71,8 +77,6 @@ def get_random_measurement(db: Session):
     return db.query(Measurement).order_by(func.random()).first()
 
 def generate_fake_measurement(db: Session):
-    tag = random.choice([get_random_experiment(db).id, None])
-
     return Measurement(
         name=generator.catch_phrase(),
         description=generator.text(max_nb_chars=200),
@@ -81,8 +85,8 @@ def generate_fake_measurement(db: Session):
         patient_reference=generator.text(max_nb_chars=200),
         shifter_id=get_random_user(db).id,
         experiment_id=get_random_experiment(db).id,
-        tag_id=tag,
-        radioisotope_id=get_random_radioisotope(db).id,
+        tags=get_random_tags(db, random.randint(0, 2)),
+        radioisotopes=get_random_radioisotopes(db, random.randint(0, 2))
     )
 
 def get_random_document(db: Session):

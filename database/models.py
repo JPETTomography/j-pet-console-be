@@ -58,6 +58,20 @@ class Experiment(Base):
     detector = relationship("Detector", back_populates="experiments")
     measurements = relationship("Measurement", back_populates="experiment")
 
+class TagMeasurement(Base):
+    __tablename__ = "tag_measurement"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tag_id = Column(Integer, ForeignKey("tags.id"), nullable=False)
+    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+
+class RadioisotopeMeasurement(Base):
+    __tablename__ = "radioisotope_measurement"
+
+    id = Column(Integer, primary_key=True, index=True)
+    radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
+    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+
 class Tag(Base):
     __tablename__ = "tags"
 
@@ -65,7 +79,7 @@ class Tag(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
-    measurements = relationship("Measurement", back_populates="tag")
+    measurements = relationship("Measurement", secondary="tag_measurement", back_populates="tags")
 
 class Radioisotope(Base):
     __tablename__ = "radioisotopes"
@@ -76,7 +90,7 @@ class Radioisotope(Base):
     activity = Column(Float, nullable=False)
     halftime = Column(Float, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
-    measurements = relationship("Measurement", back_populates="radioisotope")
+    measurements = relationship("Measurement", secondary="radioisotope_measurement", back_populates="radioisotopes")
 
 class Measurement(Base):
     __tablename__ = "measurements"
@@ -92,10 +106,8 @@ class Measurement(Base):
     shifter = relationship("User", back_populates="measurements")
     experiment_id = Column(Integer, ForeignKey("experiments.id"), nullable=False)
     experiment = relationship("Experiment", back_populates="measurements")
-    tag_id = Column(Integer, ForeignKey("tags.id"))
-    tag = relationship("Tag", back_populates="measurements")
-    radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
-    radioisotope = relationship("Radioisotope", back_populates="measurements")
+    tags = relationship("Tag", secondary="tag_measurement", back_populates="measurements")
+    radioisotopes = relationship("Radioisotope", secondary="radioisotope_measurement", back_populates="measurements")
     documents = relationship("Document", back_populates="measurement")
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
 
