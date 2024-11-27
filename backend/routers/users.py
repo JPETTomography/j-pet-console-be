@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
-from backend.utills.utills import generate_fake_user
+from backend.utills.utills import generate_fake_user, generate_user
 
 router = APIRouter()
 
@@ -21,3 +21,19 @@ def create_sample_users(db: Session = Depends(get_session_local), amount: int = 
     db.add_all(users)
     db.commit()
     return {"message": "Sample users created"}
+
+@router.post("/create_test_users/")
+# @TODO remove this later
+def create_test_users(db: Session = Depends(get_session_local)):
+    users = ["user", "shifter", "coordinator", "admin"]
+    generated_users = [
+        generate_user(
+            user,
+            user + "@gmail.com",
+            user,
+            user if user != "user" else None
+        ) for user in users
+    ]
+    db.add_all(generated_users)
+    db.commit()
+    return {"message": "Test users created"}

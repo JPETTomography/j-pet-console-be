@@ -18,6 +18,14 @@ def generate_fake_user():
         role=random.choices([None, "shifter", "coordinator", "admin"], weights=(50, 25, 15, 10))[0],
     )
 
+def generate_user(name, email, password, role):
+    return User(
+        name=name,
+        email=email,
+        password=password,
+        role=role,
+    )
+
 def get_random_detector(db: Session):
     return db.query(Detector).order_by(func.random()).first()
 

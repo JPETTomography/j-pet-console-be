@@ -98,7 +98,7 @@ def read_root():
 
 @app.get("/seed")
 def seed(db: Session = Depends(get_session_local), amount: int = 10):
-    users.create_sample_users(db, amount)
+    users.create_test_users(db)
     detectors.create_sample_detectors(db, amount)
     experiments.create_sample_experiments(db, amount)
     tags.create_sample_tags(db, amount)
