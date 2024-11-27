@@ -96,6 +96,20 @@ def read_root():
     return {"Hello": "World"}
 
 
+@app.get("/seed")
+def seed(db: Session = Depends(get_session_local), amount: int = 10):
+    users.create_sample_users(db, amount)
+    detectors.create_sample_detectors(db, amount)
+    experiments.create_sample_experiments(db, amount)
+    tags.create_sample_tags(db, amount)
+    radioisotopes.create_sample_radioisotopes(db, amount)
+    measurements.create_sample_measurements(db, amount)
+    documents.create_sample_documents(db, amount)
+    meteo_readouts.create_sample_meteo_readouts(db, amount)
+
+    return {"message": "Successfully seeded DB"}
+
+
 @app.post("/send_worker/")
 def send_message_worker(message: str):
     send_message('worker_topic', message)
