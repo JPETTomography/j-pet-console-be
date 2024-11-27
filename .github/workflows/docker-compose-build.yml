@@ -47,7 +47,6 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.SSH_USER }}
-          REMOTE_SERVER
 
       # Step 5: Build and deploy Docker Compose services
       - name: Deploy Docker Compose stack
