@@ -91,6 +91,7 @@ class Measurement(Base):
     radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
     radioisotope = relationship("Radioisotope", back_populates="measurements")
     documents = relationship("Document", back_populates="measurement")
+    meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
 
 class Document(Base):
     __tablename__ = 'documents'
@@ -106,3 +107,19 @@ class Document(Base):
     data = Column(JSONB)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
     measurement = relationship("Measurement", back_populates="documents")
+
+class MeteoReadout(Base):
+    __tablename__ = 'meteo_readouts'
+
+    id = Column(Integer, primary_key=True, index=True)
+    station_time = Column(TIMESTAMP(timezone=True), nullable=False)
+    agent_time = Column(TIMESTAMP(timezone=True), nullable=False)
+    p_atm = Column(Float, nullable=False)
+    p_1 = Column(Float, nullable=False)
+    p_2 = Column(Float, nullable=False)
+    hum_1 = Column(Float, nullable=False)
+    hum_2 = Column(Float, nullable=False)
+    temp_1 = Column(Float, nullable=False)
+    temp_2 = Column(Float, nullable=False)
+    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement = relationship("Measurement", back_populates="meteo_readouts")

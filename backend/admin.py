@@ -1,4 +1,4 @@
-from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, Document
+from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, Document, MeteoReadout
 from sqladmin import ModelView
 
 class UserAdmin(ModelView, model=User):
@@ -45,3 +45,14 @@ class MeasurementAdmin(ModelView, model=Measurement):
 class DocumentAdmin(ModelView, model=Document):
     column_searchable_list = [Document.name]
     column_list = [Document.name, Document.is_correct, Document.data]
+
+class MeteoReadoutAdmin(ModelView, model=MeteoReadout):
+    column_searchable_list = [MeteoReadout.station_time, MeteoReadout.agent_time]
+    column_list = [MeteoReadout.station_time, MeteoReadout.agent_time, "measurement.name"]
+    column_labels = {"measurement.name": "Measurement"}
+    form_ajax_refs = {
+        "measurement": {
+            "fields": ("name",),
+            "order_by": "name",
+        },
+    }

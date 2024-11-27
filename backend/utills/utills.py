@@ -1,6 +1,6 @@
 from datetime import timedelta
 import faker
-from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, Document
+from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, Document, MeteoReadout
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -92,5 +92,19 @@ def generate_fake_document(db: Session):
         reco_finish=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
         observable_evt_num=random.randint(0, 100),
         is_correct=random.choices([True, False], weights=(95, 5))[0],
+        measurement_id=get_random_measurement(db).id
+    )
+
+def generate_fake_meteo_readout(db: Session):
+    return MeteoReadout(
+        station_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
+        agent_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
+        p_atm=float(random.random()),
+        p_1=float(random.random()),
+        p_2=float(random.random()),
+        hum_1=float(random.random()),
+        hum_2=float(random.random()),
+        temp_1=float(random.random()),
+        temp_2=float(random.random()),
         measurement_id=get_random_measurement(db).id
     )
