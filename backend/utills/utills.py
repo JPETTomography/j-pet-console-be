@@ -11,7 +11,12 @@ def get_random_user(db: Session):
     return db.query(User).order_by(func.random()).first()
 
 def generate_fake_user():
-    return User(name=generator.name(), email=generator.unique.email(), password="Tajne123")
+    return User(
+        name=generator.name(),
+        email=generator.unique.email(),
+        password="Tajne123",
+        role=random.choices([None, "shifter", "coordinator", "admin"], weights=(50, 25, 15, 10))[0],
+    )
 
 def get_random_detector(db: Session):
     return db.query(Detector).order_by(func.random()).first()
