@@ -1,6 +1,22 @@
 name: Deploy
 
-on: workflow_dispatch
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'agent/Dockerfile'
+      - 'worker/Dockerfile'
+      - 'backend/Dockerfile'
+      - 'docker-compose.yaml'
+      - 'docker-compose.prod.yaml'
+      - 'docker-compose.local.yaml'
+    branches:
+      - main
+      - JPC-44-compose-automatic-deployment
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
