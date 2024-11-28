@@ -29,14 +29,20 @@ jobs:
 
       - name: Set up OpenVPN
         run: |
-          sudo apt-get update && sudo apt-get install -y openvpn
+          # sudo apt-get update && sudo apt-get install -y openvpn
           echo "${{ vars.OPENVPN_CONFIG }}" > openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_KEY }}" > openvpn.key
           echo "${{ secrets.OPENVPN_CERT }}" > openvpn.crt
           echo "${{ secrets.OPENVPN_CA }}" > ca.crt
-          sudo openvpn --config openvpn-config.ovpn --daemon
+          # sudo openvpn --config openvpn-config.ovpn --daemon
         env:
           OPENVPN_CONFIG: ${{ vars.OPENVPN_CONFIG }}
+
+      - name: Connect to VPN
+        uses: "kota65535/github-openvpn-connect-action@v2"
+        with:
+          config_file: openvpn-config.ovpn
+          client_key: ${{ secrets.OPENVPN_KEY }}
 
       - name: Set up SSH tunnel
         run: |
