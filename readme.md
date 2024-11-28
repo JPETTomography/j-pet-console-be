@@ -12,7 +12,7 @@ will download all the needed examplary data to the examplary_data folder.
 For developement purposes, with volumes mounted up simply run
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
+docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up --build
 ```
 
 For deployment purposes run:
