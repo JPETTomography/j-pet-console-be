@@ -40,9 +40,9 @@ jobs:
 
       - name: Set up SSH tunnel
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
-          chmod 600 ssh_key
-          ssh -i ssh_key -o StrictHostKeyChecking=no -vvv -L 2376:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }} -N &
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key.txt
+          chmod 600 ssh_key.txt
+          ssh -vvv -i ssh_key.txt -L 2376:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }}
           export DOCKER_HOST=tcp://localhost:2376
           docker-compose -f docker-compose.yaml up -d
         env:
