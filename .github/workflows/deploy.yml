@@ -44,11 +44,14 @@ jobs:
           config_file: openvpn-config.ovpn
           client_key: ${{ secrets.OPENVPN_KEY }}
 
+ssh -fN -v -L 5432:<db-host>:5432 user@<bastion_ip>
       - name: Set up SSH tunnel
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key.txt
-          chmod 600 ssh_key.txt
-          ssh -tt -i ssh_key.txt -vvv ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }}
+          mkdir ~/.ssh
+          ssh-keyscan -H ${{ secrets.REMOTE_SERVER }} >> ~/.ssh/known_hosts
+          eval `ssh-agent -s`
+          ssh-add - <<< "${{secrets.SSH_PRIVATE_KEY}}"
+          ssh -fN -v -L 2376:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }}
           export DOCKER_HOST=tcp://localhost:2376
           docker-compose -f docker-compose.yaml up -d
         env:
