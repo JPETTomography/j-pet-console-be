@@ -42,13 +42,15 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
-          ssh -i ssh_key -o StrictHostKeyChecking=no -L 2375:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }} -N &
+          ssh -i ssh_key -o StrictHostKeyChecking=no -vvv -L 2375:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }} -N &
+          export DOCKER_HOST=tcp://localhost:2375
+          docker-compose -f docker-compose.yaml up -d
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.SSH_USER }}
 
-      # Step 5: Build and deploy Docker Compose services
-      - name: Deploy Docker Compose stack
-        run: |
-          export DOCKER_HOST=tcp://localhost:2375
-          docker-compose -f docker-compose.yaml up -d
+      # # Step 5: Build and deploy Docker Compose services
+      # - name: Deploy Docker Compose stack
+      #   run: |
+      #     export DOCKER_HOST=tcp://localhost:2375
+      #     docker-compose -f docker-compose.yaml up -d
