@@ -1,0 +1,10 @@
+services:
+  web:
+    volumes:
+      - .:/app
+  worker:
+    volumes:
+      - .:/app
+  agent:
+    volumes:
+      - .:/app
