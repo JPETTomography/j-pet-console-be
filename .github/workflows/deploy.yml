@@ -42,8 +42,8 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
-          ssh -i ssh_key -o StrictHostKeyChecking=no -vvv -L 2375:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }} -N &
-          export DOCKER_HOST=tcp://localhost:2375
+          ssh -i ssh_key -o StrictHostKeyChecking=no -vvv -L 2376:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }} -N &
+          export DOCKER_HOST=tcp://localhost:2376
           docker-compose -f docker-compose.yaml up -d
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
