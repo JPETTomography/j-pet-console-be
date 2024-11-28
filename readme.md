@@ -9,12 +9,17 @@ go to `common/data_helpers` and get the data first
 
 will download all the needed examplary data to the examplary_data folder.
 
-then simply run
+For developement purposes, with volumes mounted up simply run
 
 ```
-docker compose up
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
 ```
 
+For deployment purposes run:
+
+```
+docker compose -f docker-compose.yaml up --build
+```
 
 then see `localhost:8000/docs`
 to run full process of running agent, reading data from root, sending it to worker by json and then worker sending it to database use `/send_agent/` method
