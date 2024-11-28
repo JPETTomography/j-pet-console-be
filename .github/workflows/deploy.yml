@@ -6,6 +6,10 @@ on:
     branches:
       - main
       - JPC-44-compose-automatic-deployment
+  push:
+    branches:
+      - main
+      - JPC-44-compose-automatic-deployment
   pull_request:
     branches:
       - main
