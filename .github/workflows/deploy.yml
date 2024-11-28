@@ -29,7 +29,7 @@ jobs:
 
       - name: Set up OpenVPN
         run: |
-          # sudo apt-get update && sudo apt-get install -y openvpn
+          sudo apt-get update && sudo apt-get install -y openvpn
           echo "${{ vars.OPENVPN_CONFIG }}" > openvpn-config.ovpn
           echo "${{ secrets.OPENVPN_KEY }}" > openvpn.key
           echo "${{ secrets.OPENVPN_CERT }}" > openvpn.crt
