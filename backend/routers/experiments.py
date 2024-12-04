@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, selectinload, load_only
 import database.models as models
 from database.database import get_session_local
@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.get("/")
 def read_experiments(db: Session = Depends(get_session_local)):
-    return db.query(models.Experiment).options(selectinload(models.Experiment.owner).load_only(models.User.name)).all()
+    return db.query(models.Experiment).options(selectinload(models.Experiment.coordinator).load_only(models.User.name)).all()
 
 @router.get("/{id}")
 def read_experiment(id: str, db: Session = Depends(get_session_local)):
@@ -18,6 +18,10 @@ def read_experiment(id: str, db: Session = Depends(get_session_local)):
 # @TODO remove this later
 def create_sample_experiments(db: Session = Depends(get_session_local), amount: int = 10):
     experiments = [generate_fake_experiment(db) for _ in range(amount)]
-    db.add_all(experiments)
-    db.commit()
+    try:
+        db.add_all(experiments)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create experiments")
     return {"message": "Sample experiments created"}

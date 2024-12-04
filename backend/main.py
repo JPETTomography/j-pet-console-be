@@ -5,15 +5,12 @@ import database.models as models
 import database.database as database
 import pika
 from sqladmin import Admin
-from backend.admin import UserAdmin, DataAdmin, ExperimentAdmin
+from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, TagAdmin, RadioisotopeAdmin, MeasurementAdmin, DocumentAdmin, MeteoReadoutAdmin
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
-from backend.routers import users, experiments
+from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements, documents, meteo_readouts
 from backend.auth import create_access_token
 import json
-from pydantic import BaseModel
-from database.models import Detector
-import uuid
 
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials('user', 'password')
@@ -47,8 +44,13 @@ def send_message(topic, message):
 
 app = FastAPI()
 app.include_router(users.router, prefix="/users", tags=["users"])
-app.include_router(experiments.router,
-                   prefix="/experiments", tags=["experiments"])
+app.include_router(detectors.router, prefix="/detectors", tags=["detectors"])
+app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
+app.include_router(tags.router, prefix="/tags", tags=["tags"])
+app.include_router(radioisotopes.router, prefix="/radioisotopes", tags=["radioisotopes"])
+app.include_router(measurements.router, prefix="/measurements", tags=["measurements"])
+app.include_router(documents.router, prefix="/documents", tags=["documents"])
+app.include_router(meteo_readouts.router, prefix="/meteo_readouts", tags=["meteo_readouts"])
 
 origins = [
     "http://localhost:3000", # local development
@@ -63,8 +65,13 @@ app.add_middleware(
 
 admin = Admin(app, database.engine)
 admin.add_view(UserAdmin)
-admin.add_view(DataAdmin)
+admin.add_view(DetectorAdmin)
 admin.add_view(ExperimentAdmin)
+admin.add_view(TagAdmin)
+admin.add_view(RadioisotopeAdmin)
+admin.add_view(MeasurementAdmin)
+admin.add_view(DocumentAdmin)
+admin.add_view(MeteoReadoutAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -86,6 +93,20 @@ def read_root():
     return {"Hello": "World"}
 
 
+@app.get("/seed")
+def seed(db: Session = Depends(get_session_local), amount: int = 10):
+    users.create_test_users(db)
+    detectors.create_sample_detectors(db, amount)
+    experiments.create_sample_experiments(db, amount)
+    tags.create_sample_tags(db, amount)
+    radioisotopes.create_sample_radioisotopes(db, amount)
+    measurements.create_sample_measurements(db, amount)
+    documents.create_sample_documents(db, amount)
+    meteo_readouts.create_sample_meteo_readouts(db, amount)
+
+    return {"message": "Successfully seeded DB"}
+
+
 @app.post("/send_worker/")
 def send_message_worker(message: str):
     send_message('worker_topic', message)
@@ -96,36 +117,3 @@ def send_message_worker(message: str):
 def send_message_agent(message: str):
     send_message('agent_topic', json.dumps({"task": "add_random_test_data"}))
     return {"message": "Message sent"}
-
-# Pydantic Model for input validation
-class DetectorCreate(BaseModel):
-    name: str
-    description: str
-    status: str
-    agent_code: str
-
-
-@app.post("/detectors/", response_model=dict)
-def create_detector(detector: DetectorCreate, db: Session = Depends(get_session_local)):
-    agent_code = uuid.uuid4().hex
-    new_detector = Detector(
-        name=detector.name,
-        description=detector.description,
-        status=detector.status,
-        agent_code=agent_code,
-    )
-    try:
-        db.add(new_detector)
-        db.commit()
-        db.refresh(new_detector)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create detector")
-
-    return {
-        "id": new_detector.id,
-        "name": new_detector.name,
-        "description": new_detector.description,
-        "status": new_detector.status,
-        "agent_code": new_detector.agent_code,
-    }
