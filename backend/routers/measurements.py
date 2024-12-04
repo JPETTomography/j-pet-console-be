@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
@@ -18,6 +18,10 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
 # @TODO remove this later
 def create_sample_measurements(db: Session = Depends(get_session_local), amount: int = 10):
     measurements = [generate_fake_measurement(db) for _ in range(amount)]
-    db.add_all(measurements)
-    db.commit()
+    try:
+        db.add_all(measurements)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create measurements")
     return {"message": "Sample measurements created"}

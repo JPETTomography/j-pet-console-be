@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
@@ -18,6 +18,10 @@ def read_radioisotope(id: str, db: Session = Depends(get_session_local)):
 # @TODO remove this later
 def create_sample_radioisotopes(db: Session = Depends(get_session_local), amount: int = 10):
     radioisotopes = [generate_fake_radioisotope() for _ in range(amount)]
-    db.add_all(radioisotopes)
-    db.commit()
+    try:
+        db.add_all(radioisotopes)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create radioisotopes")
     return {"message": "Sample radioisotopes created"}

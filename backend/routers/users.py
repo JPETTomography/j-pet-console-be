@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
@@ -18,8 +18,12 @@ def read_user(id: str, db: Session = Depends(get_session_local)):
 # @TODO remove this later
 def create_sample_users(db: Session = Depends(get_session_local), amount: int = 10):
     users = [generate_fake_user() for _ in range(amount)]
-    db.add_all(users)
-    db.commit()
+    try:
+        db.add_all(users)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create users")
     return {"message": "Sample users created"}
 
 @router.post("/create_test_users/")
@@ -34,6 +38,10 @@ def create_test_users(db: Session = Depends(get_session_local)):
             user if user != "user" else None
         ) for user in users
     ]
-    db.add_all(generated_users)
-    db.commit()
+    try:
+        db.add_all(generated_users)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create test users")
     return {"message": "Test users created"}

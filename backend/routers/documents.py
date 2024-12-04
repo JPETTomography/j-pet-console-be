@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
@@ -18,6 +18,10 @@ def read_document(id: str, db: Session = Depends(get_session_local)):
 # @TODO remove this later
 def create_sample_documents(db: Session = Depends(get_session_local), amount: int = 10):
     documents = [generate_fake_document(db) for _ in range(amount)]
-    db.add_all(documents)
-    db.commit()
+    try:
+        db.add_all(documents)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create documents")
     return {"message": "Sample documents created"}
