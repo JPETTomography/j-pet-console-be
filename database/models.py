@@ -38,7 +38,7 @@ class Detector(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     status = Column(String, nullable=False)
-    agent_ip = Column(String, nullable=False)
+    agent_code = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     experiments = relationship("Experiment", back_populates="detector")

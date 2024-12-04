@@ -4,6 +4,7 @@ from database.models import User, Detector, Experiment, Tag, Radioisotope, Measu
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+import uuid
 
 generator = faker.Faker()
 
@@ -34,7 +35,7 @@ def generate_fake_detector():
         name=generator.catch_phrase(),
         description=generator.text(max_nb_chars=200),
         status=random.choice(["online", "offline", "damaged", "in-repair", "commissioned", "decommissioned"]),
-        agent_ip=":".join([str(random.randint(0, 255)) for _ in range(4)])
+        agent_code=uuid.uuid4().hex
     )
 
 def get_random_experiment(db: Session):

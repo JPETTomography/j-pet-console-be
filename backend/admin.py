@@ -7,7 +7,7 @@ class UserAdmin(ModelView, model=User):
 
 class DetectorAdmin(ModelView, model=Detector):
     column_searchable_list = [Detector.name]
-    column_list = [Detector.name, Detector.status, Detector.agent_ip]
+    column_list = [Detector.name, Detector.status, Detector.agent_code]
 
 class ExperimentAdmin(ModelView, model=Experiment):
     column_list = [Experiment.name, Experiment.description, Experiment.status, "coordinator.name", "detector.name"]
