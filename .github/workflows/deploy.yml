@@ -56,5 +56,4 @@ jobs:
           git submodule update --remote --recursive
           cd j-pet-console-fe
           npm install
-          docker compose up --build -d
-          ls node_modules/react-scripts
+          docker-compose -f docker-compose.yml up -d
