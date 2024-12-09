@@ -53,7 +53,8 @@ jobs:
       - name: Initialize submodules and front-end
         run: |
           git submodule init
-          git submodule update --recursive
+          git submodule update --remote --recursive
           ls -la
           cd j-pet-console-fe
+          ls -la
           docker-compose -f docker-compose.yml up -d
