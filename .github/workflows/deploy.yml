@@ -54,6 +54,7 @@ jobs:
         run: |
           git submodule init
           git submodule update --remote --recursive
+          cd j-pet-console-fe
           npm install
-          ls node_modules/react-scripts
           docker compose up --build 
+          ls node_modules/react-scripts
