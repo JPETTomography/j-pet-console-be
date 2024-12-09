@@ -1,0 +1,3 @@
+[submodule "j-pet-console-fe"]
+	path = j-pet-console-fe
+	url = https://github.com/JPETTomography/j-pet-console-fe.git
