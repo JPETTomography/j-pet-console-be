@@ -57,3 +57,4 @@ jobs:
           cd j-pet-console-fe
           docker-compose down
           docker compose up --build 
+          ls node_modules/react-scripts
