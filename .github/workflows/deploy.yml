@@ -53,8 +53,8 @@ jobs:
           export DOCKER_HOST=tcp://localhost:2375
           docker-compose -f docker-compose.yaml up -d
 
-          - name: Initialize submodules and front-end
-          run: |
-            git submodule update --init --recursive
-            cd jpet-console-fe
-            docker-compose -f docker-compose.yaml up -d
+      - name: Initialize submodules and front-end
+        run: |
+          git submodule update --init --recursive
+          cd jpet-console-fe
+          docker-compose -f docker-compose.yaml up -d
