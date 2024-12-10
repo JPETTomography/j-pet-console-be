@@ -63,9 +63,11 @@ def get_random_tags(db: Session, amount = 1):
     return db.query(Tag).order_by(func.random()).limit(amount).all()
 
 def generate_fake_tag():
+    color = "%06x" % random.randint(0, 0xFFFFFF)
     return Tag(
         name=generator.catch_phrase().partition(" ")[0],
         description=generator.text(max_nb_chars=200),
+        color=color
     )
 
 def get_random_radioisotope(db: Session):
