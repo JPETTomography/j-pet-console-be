@@ -56,4 +56,5 @@ jobs:
           git submodule update --remote --recursive
           cd j-pet-console-fe
           npm install
+          export DOCKER_HOST=tcp://localhost:2375
           docker-compose -f docker-compose.yml up -d
