@@ -1,11 +1,13 @@
-from sqlalchemy import Column, Boolean, Integer, Float, String, text, TIMESTAMP, ForeignKey, event
+from sqlalchemy import Column, Boolean, Integer, Float, String, text, TIMESTAMP, ForeignKey, event, Enum
 from sqlalchemy.orm import relationship
 from database.database import Base
 from sqlalchemy.dialects.postgresql import JSONB
 from passlib.context import CryptContext
+from sqlalchemy.dialects.postgresql import ENUM
+from database.enums import Role, Status, ExperimentStatus
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 class User(Base):
     __tablename__ = "users"
@@ -14,7 +16,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable = False)
     password = Column(String, nullable = False)
-    role = Column(String)
+    role = Column(ENUM(Role), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     experiments = relationship("Experiment", back_populates="coordinator")
@@ -33,11 +35,12 @@ def hash_password_before_insert(_mapper, connection, target):
 
 class Detector(Base):
     __tablename__ = "detectors"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    status = Column(String, nullable=False)
+    
+    status = Column(ENUM(Status), nullable=False)
+    
     agent_code = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
@@ -45,11 +48,13 @@ class Detector(Base):
 
 class Experiment(Base):
     __tablename__ = "experiments"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    status = Column(String, nullable=False)
+    
+    # Use Enum for status
+    status = Column(ENUM(ExperimentStatus), nullable=False)
+    
     location = Column(String, nullable=False)
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
     end_date = Column(TIMESTAMP(timezone=True))
