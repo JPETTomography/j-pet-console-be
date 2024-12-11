@@ -4,6 +4,7 @@ from database.models import User, Detector, Experiment, Tag, Radioisotope, Measu
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from database.enums import Role, Status, ExperimentStatus
 import uuid
 
 generator = faker.Faker()
@@ -16,7 +17,7 @@ def generate_fake_user():
         name=generator.name(),
         email=generator.unique.email(),
         password="Tajne123",
-        role=random.choices([None, "shifter", "coordinator", "admin"], weights=(50, 25, 15, 10))[0],
+        role=random.choices([None, Role.SHIFTER, Role.COORDINATOR, Role.ADMIN], weights=(50, 25, 15, 10))[0],
     )
 
 def generate_user(name, email, password, role):
@@ -34,7 +35,7 @@ def generate_fake_detector():
     return Detector(
         name=generator.catch_phrase(),
         description=generator.text(max_nb_chars=200),
-        status=random.choice(["online", "offline", "damaged", "in-repair", "commissioned", "decommissioned"]),
+        status=random.choice([Status.ONLINE, Status.OFFLINE, Status.DAMAGED, Status.IN_REPAIR, Status.COMMISSIONED, Status.DECOMMISSIONED]),
         agent_code=uuid.uuid4().hex
     )
 
@@ -48,7 +49,7 @@ def generate_fake_experiment(db: Session):
     return Experiment(
         name=generator.catch_phrase(),
         description=generator.text(max_nb_chars=200),
-        status=random.choice(["draft", "ongoing", "closed", "archived"]),
+        status=random.choice([ExperimentStatus.DRAFT, ExperimentStatus.ONGOING, ExperimentStatus.CLOSED, ExperimentStatus.ARCHIVED]),
         location=generator.city(),
         start_date=start_date,
         end_date=end_date,

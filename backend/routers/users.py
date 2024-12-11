@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
+from database.models import Role
 from backend.utills.utills import generate_fake_user, generate_user
 
 router = APIRouter()
@@ -29,15 +30,15 @@ def create_sample_users(db: Session = Depends(get_session_local), amount: int = 
 @router.post("/create_test_users/")
 # @TODO remove this later
 def create_test_users(db: Session = Depends(get_session_local)):
-    users = ["user", "shifter", "coordinator", "admin"]
+    roles = [Role.SHIFTER, Role.COORDINATOR, Role.ADMIN]
     generated_users = [
         generate_user(
-            user,
-            user + "@gmail.com",
-            user,
-            user if user != "user" else None
-        ) for user in users
-    ]
+            str(user.value) ,
+            str(user.value) + "@gmail.com",
+            str(user.value),
+            user
+        ) for user in roles
+    ] + [generate_user("user", "user@gmail.com", "user", None)]
     try:
         db.add_all(generated_users)
         db.commit()
