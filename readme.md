@@ -40,3 +40,30 @@ docker compose up web
 docker compose up agent
 docker compose up worker
 ```
+
+# Demo step by step
+
+1. Download the repo
+2. Download the git submodule using
+
+```
+git submodule init
+git submodule update --remote --recursive
+
+```
+
+3. Run backend
+
+
+```
+docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up
+```
+
+4. Run frontend
+
+```
+cd j-pet-console-fe
+docker compose -f docker-compose.yml up
+```
+
+5. Open http://localhost:8000/docs and trigger `seed`

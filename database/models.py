@@ -115,11 +115,11 @@ class Measurement(Base):
     experiment = relationship("Experiment", back_populates="measurements")
     tags = relationship("Tag", secondary="tag_measurement", back_populates="measurements")
     radioisotopes = relationship("Radioisotope", secondary="radioisotope_measurement", back_populates="measurements")
-    documents = relationship("Document", back_populates="measurement")
+    data_entry = relationship("DataEntry", back_populates="measurement")
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
 
-class Document(Base):
-    __tablename__ = 'documents'
+class DataEntry(Base):
+    __tablename__ = 'data_entry'
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
@@ -133,7 +133,7 @@ class Document(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
-    measurement = relationship("Measurement", back_populates="documents")
+    measurement = relationship("Measurement", back_populates="data_entry")
 
 class MeteoReadout(Base):
     __tablename__ = 'meteo_readouts'
