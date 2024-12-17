@@ -106,12 +106,13 @@ def get_random_data_entry(db: Session):
 def generate_fake_data_entry(db: Session):
     return DataEntry(
         name=generator.catch_phrase(),
+        histo_type=random.choice(["TH2D", "TH1D"]),
         histo_dir="/".join([generator.catch_phrase().partition(" ")[0] for _ in range(2)]),
-        daq_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
-        agent_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
-        reco_finish=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
-        observable_evt_num=random.randint(0, 100),
-        is_correct=random.choices([True, False], weights=(95, 5))[0],
+        # daq_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
+        # agent_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
+        # reco_finish=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
+        # observable_evt_num=random.randint(0, 100),
+        # is_correct=random.choices([True, False], weights=(95, 5))[0],
         measurement_id=get_random_measurement(db).id
     )
 

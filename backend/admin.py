@@ -44,7 +44,7 @@ class MeasurementAdmin(ModelView, model=Measurement):
 
 class DataEntryAdmin(ModelView, model=DataEntry):
     column_searchable_list = [DataEntry.name]
-    column_list = [DataEntry.name, DataEntry.is_correct, DataEntry.data]
+    column_list = [DataEntry.name, DataEntry.data, DataEntry.measurement_id]
 
 class MeteoReadoutAdmin(ModelView, model=MeteoReadout):
     column_searchable_list = [MeteoReadout.station_time, MeteoReadout.agent_time]
