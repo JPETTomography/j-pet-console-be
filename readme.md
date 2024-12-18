@@ -45,7 +45,7 @@ docker compose up worker
 
 1. Download the repo
 2. Download the git submodule using
-3. Download data. Use `common/data_helpers/download_data.sh` to download exemplary files to `examplary_data_hold` folder
+3. Download data. Use `common/data_helpers/download_data.sh` to download exemplary files to `examplary_data_hold` folder and copy `histo_description.json` to `examplary_data`
 
 ```
 git submodule init

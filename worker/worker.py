@@ -3,8 +3,8 @@ import json
 import argparse
 import pika
 from database.database import get_session_local
-from database.models import DataEntry, Measurement
-from sqlalchemy import func
+from database.models import DataEntry, Measurement, Detector, Experiment
+from sqlalchemy import func, desc
 import logging
 
 # uncomment to debug
@@ -52,6 +52,15 @@ def save_data_to_db(json_data, agent_code):
     title = json_data['file']
     data = json_data['histogram'][0]
     print(data.keys())
+    print("agent_code", agent_code)
+    print(session.query(Detector.agent_code).all())
+    detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
+
+    print("det", detector)
+    experiment = session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
+    measurement_match = session.query(Measurement).filter(Measurement.experiment_id == experiment.id)
+    measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
+
     try:
         # @TODO cover the agent_code field
         new_data_entry = DataEntry(
@@ -59,7 +68,7 @@ def save_data_to_db(json_data, agent_code):
             name = "unnamed_entry",
             histo_type = data['histo_type'],
             histo_dir = data['histo_dir'],
-            measurement_id=session.query(func.max(Measurement.id)),
+            measurement_id=measurement.id,
         )
         session.add(new_data_entry)
         session.commit()

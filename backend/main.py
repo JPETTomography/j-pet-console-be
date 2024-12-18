@@ -10,6 +10,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
 from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements, data_entry, meteo_readouts
 from backend.auth import create_access_token
+from backend.fake_data.read_fake_data import fake_json
 import json
 
 rabbitmq_host = "rabbitmq"
@@ -93,8 +94,8 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/seed")
-def seed(db: Session = Depends(get_session_local), amount: int = 10):
+@app.get("/seed_random")
+def seed_random(db: Session = Depends(get_session_local), amount: int = 10):
     users.create_test_users(db)
     detectors.create_sample_detectors(db, amount)
     experiments.create_sample_experiments(db, amount)
@@ -103,7 +104,19 @@ def seed(db: Session = Depends(get_session_local), amount: int = 10):
     measurements.create_sample_measurements(db, amount)
     data_entry.create_sample_data_entries(db, amount)
     meteo_readouts.create_sample_meteo_readouts(db, amount)
+    return {"message": "Successfully seeded DB"}
 
+@app.get("/seed")
+def seed(db: Session = Depends(get_session_local), amount: int = 10):
+    fake_data = fake_json("backend/fake_data/Believable fake J-PET database - Sheet1.tsv")
+    users.create_test_users(db)
+    detectors.create_sample_detectors(db, fake_data=fake_data['Detector'])
+    experiments.create_sample_experiments(db, fake_data=fake_data['Experiment'])
+    tags.create_sample_tags(db, fake_data=fake_data['Tag'])
+    radioisotopes.create_sample_radioisotopes(db, fake_data=fake_data['Radioisotope'])
+    measurements.create_sample_measurements(db, fake_data=fake_data['Measurement'])
+    data_entry.create_sample_data_entries(db, amount)
+    meteo_readouts.create_sample_meteo_readouts(db, amount)
     return {"message": "Successfully seeded DB"}
 
 
