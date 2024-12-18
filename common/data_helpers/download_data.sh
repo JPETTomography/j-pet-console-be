@@ -1,7 +1,7 @@
 #!/bin/bash
 
 INPUT_FILE="file_urls.txt"
-TARGET_DIR="../../examplary_data"
+TARGET_DIR="../../examplary_data_hold"
 
 if [ ! -f "$INPUT_FILE" ]; then
     echo "Error: $INPUT_FILE not found!"

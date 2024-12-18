@@ -2,9 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
-from backend.utills.utills import generate_fake_radioisotope
+from backend.routers.common import generate_models
+import faker
+import random
 
+generator = faker.Faker()
 router = APIRouter()
+
+
+def generate_fake_radioisotope(db: Session=None):
+    while True:
+        yield dict(
+            name=generator.catch_phrase(),
+            description=generator.text(max_nb_chars=200),
+            activity=float(random.random()),
+            halflife=float(random.random())
+        )
 
 @router.get("/")
 def read_radioisotopes(db: Session = Depends(get_session_local)):
@@ -16,8 +29,8 @@ def read_radioisotope(id: str, db: Session = Depends(get_session_local)):
 
 @router.post("/create_sample_radioisotopes/")
 # @TODO remove this later
-def create_sample_radioisotopes(db: Session = Depends(get_session_local), amount: int = 10):
-    radioisotopes = [generate_fake_radioisotope() for _ in range(amount)]
+def create_sample_radioisotopes(db: Session = Depends(get_session_local), amount: int = 10, fake_data:dict=None):
+    radioisotopes = generate_models(models.Radioisotope, generate_fake_radioisotope, db, amount, fake_data)
     try:
         db.add_all(radioisotopes)
         db.commit()

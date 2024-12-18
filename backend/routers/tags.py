@@ -2,9 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
-from backend.utills.utills import generate_fake_tag
+from backend.routers.common import generate_models
+import faker
+import random
 
+generator = faker.Faker()
 router = APIRouter()
+
+def generate_fake_tag(db: Session=None):
+    while True:
+        color = "%06x" % random.randint(0, 0xFFFFFF)
+        yield dict(
+            name=generator.catch_phrase().partition(" ")[0],
+            description=generator.text(max_nb_chars=200),
+            color=color
+        )
+
 
 @router.get("/")
 def read_tags(db: Session = Depends(get_session_local)):
@@ -16,8 +29,8 @@ def read_tag(id: str, db: Session = Depends(get_session_local)):
 
 @router.post("/create_sample_tags/")
 # @TODO remove this later
-def create_sample_tags(db: Session = Depends(get_session_local), amount: int = 10):
-    tags = [generate_fake_tag() for _ in range(amount)]
+def create_sample_tags(db: Session = Depends(get_session_local), amount: int = 10, fake_data:dict=None):
+    tags = generate_models(models.Tag, generate_fake_tag, db, amount, fake_data)
     try:
         db.add_all(tags)
         db.commit()
