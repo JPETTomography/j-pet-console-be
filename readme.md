@@ -57,14 +57,14 @@ git submodule update --remote --recursive
 
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up
+docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up --build
 ```
 
 5. Run frontend
 
 ```
 cd j-pet-console-fe
-docker compose -f docker-compose.yml up
+docker compose -f docker-compose.yml up --build
 ```
 
 6. Open http://localhost:8000/docs and trigger `seed`
