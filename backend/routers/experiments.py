@@ -12,7 +12,7 @@ def read_experiments(db: Session = Depends(get_session_local)):
 
 @router.get("/{id}")
 def read_experiment(id: str, db: Session = Depends(get_session_local)):
-    return db.query(models.Experiment).filter(models.Experiment.id == id).first() or f"No experiment with id: {id} found."
+    return db.query(models.Experiment).filter(models.Experiment.id == id).options(selectinload(models.Experiment.coordinator).load_only(models.User.name)).first() or f"No experiment with id: {id} found."
 
 @router.get("/{id}/measurements")
 def read_experiment_measurements(id: str, db: Session = Depends(get_session_local)):
