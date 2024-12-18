@@ -1,6 +1,6 @@
 from datetime import timedelta
 import faker
-from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, Document, MeteoReadout
+from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, DataEntry, MeteoReadout
 import random
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -100,11 +100,11 @@ def generate_fake_measurement(db: Session):
         radioisotopes=get_random_radioisotopes(db, random.randint(0, 2))
     )
 
-def get_random_document(db: Session):
-    return db.query(Document).order_by(func.random()).first()
+def get_random_data_entry(db: Session):
+    return db.query(DataEntry).order_by(func.random()).first()
 
-def generate_fake_document(db: Session):
-    return Document(
+def generate_fake_data_entry(db: Session):
+    return DataEntry(
         name=generator.catch_phrase(),
         histo_dir="/".join([generator.catch_phrase().partition(" ")[0] for _ in range(2)]),
         daq_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),

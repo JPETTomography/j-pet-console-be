@@ -1,4 +1,4 @@
-from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, Document, MeteoReadout
+from database.models import User, Detector, Experiment, Tag, Radioisotope, Measurement, DataEntry, MeteoReadout
 from sqladmin import ModelView
 
 class UserAdmin(ModelView, model=User):
@@ -42,9 +42,9 @@ class MeasurementAdmin(ModelView, model=Measurement):
         },
     }
 
-class DocumentAdmin(ModelView, model=Document):
-    column_searchable_list = [Document.name]
-    column_list = [Document.name, Document.is_correct, Document.data]
+class DataEntryAdmin(ModelView, model=DataEntry):
+    column_searchable_list = [DataEntry.name]
+    column_list = [DataEntry.name, DataEntry.is_correct, DataEntry.data]
 
 class MeteoReadoutAdmin(ModelView, model=MeteoReadout):
     column_searchable_list = [MeteoReadout.station_time, MeteoReadout.agent_time]

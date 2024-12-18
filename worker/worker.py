@@ -3,7 +3,7 @@ import json
 import argparse
 import pika
 from database.database import get_session_local
-from database.models import Document
+from database.models import DataEntry
 import logging
 
 # uncomment to debug
@@ -52,13 +52,13 @@ def save_data_to_db(json_data, agent_code):
     data = json_data['histogram']
     try:
         # @TODO cover the agent_code field
-        new_document = Document(title=title, data=data)
-        session.add(new_document)
+        new_data_entry = DataEntry(title=title, data=data)
+        session.add(new_data_entry)
         session.commit()
-        print(f"Inserted document with title '{title}'")
+        print(f"Inserted data entry with title '{title}'")
     except Exception as e:
         session.rollback()
-        print(f"Failed to insert document: {e}")
+        print(f"Failed to insert data entry: {e}")
     finally:
         session.close()
 

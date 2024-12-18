@@ -5,10 +5,10 @@ import database.models as models
 import database.database as database
 import pika
 from sqladmin import Admin
-from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, TagAdmin, RadioisotopeAdmin, MeasurementAdmin, DocumentAdmin, MeteoReadoutAdmin
+from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, TagAdmin, RadioisotopeAdmin, MeasurementAdmin, DataEntryAdmin, MeteoReadoutAdmin
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
-from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements, documents, meteo_readouts
+from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements, data_entry, meteo_readouts
 from backend.auth import create_access_token
 import json
 
@@ -49,7 +49,7 @@ app.include_router(experiments.router, prefix="/experiments", tags=["experiments
 app.include_router(tags.router, prefix="/tags", tags=["tags"])
 app.include_router(radioisotopes.router, prefix="/radioisotopes", tags=["radioisotopes"])
 app.include_router(measurements.router, prefix="/measurements", tags=["measurements"])
-app.include_router(documents.router, prefix="/documents", tags=["documents"])
+app.include_router(data_entry.router, prefix="/data_entry", tags=["data_entry"])
 app.include_router(meteo_readouts.router, prefix="/meteo_readouts", tags=["meteo_readouts"])
 
 origins = [
@@ -70,7 +70,7 @@ admin.add_view(ExperimentAdmin)
 admin.add_view(TagAdmin)
 admin.add_view(RadioisotopeAdmin)
 admin.add_view(MeasurementAdmin)
-admin.add_view(DocumentAdmin)
+admin.add_view(DataEntryAdmin)
 admin.add_view(MeteoReadoutAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
@@ -101,7 +101,7 @@ def seed(db: Session = Depends(get_session_local), amount: int = 10):
     tags.create_sample_tags(db, amount)
     radioisotopes.create_sample_radioisotopes(db, amount)
     measurements.create_sample_measurements(db, amount)
-    documents.create_sample_documents(db, amount)
+    data_entry.create_sample_data_entries(db, amount)
     meteo_readouts.create_sample_meteo_readouts(db, amount)
 
     return {"message": "Successfully seeded DB"}
