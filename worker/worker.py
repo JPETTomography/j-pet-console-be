@@ -51,12 +51,8 @@ def save_data_to_db(json_data, agent_code):
     session = get_session_local()
     title = json_data['file']
     data = json_data['histogram'][0]
-    print(data.keys())
-    print("agent_code", agent_code)
-    print(session.query(Detector.agent_code).all())
     detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
 
-    print("det", detector)
     experiment = session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
     measurement_match = session.query(Measurement).filter(Measurement.experiment_id == experiment.id)
     measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
