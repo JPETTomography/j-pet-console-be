@@ -29,7 +29,7 @@ class TagAdmin(ModelView, model=Tag):
 
 class RadioisotopeAdmin(ModelView, model=Radioisotope):
     column_searchable_list = [Radioisotope.name]
-    column_list = [Radioisotope.name, Radioisotope.description, Radioisotope.activity, Radioisotope.halftime]
+    column_list = [Radioisotope.name, Radioisotope.description, Radioisotope.activity, Radioisotope.halflife]
 
 class MeasurementAdmin(ModelView, model=Measurement):
     column_searchable_list = [Measurement.name]
