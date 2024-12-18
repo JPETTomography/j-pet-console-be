@@ -81,7 +81,7 @@ def generate_fake_radioisotope():
         name=generator.catch_phrase(),
         description=generator.text(max_nb_chars=200),
         activity=float(random.random()),
-        halftime=float(random.random())
+        halflife=float(random.random())
     )
 
 def get_random_measurement(db: Session):
