@@ -39,3 +39,4 @@ Patient liver studies	Measurement done after CT scan of patient with liver cance
 Patient head	After CT-PET scan of the head		
 Calibration with open source	All purpose calibration, source placed in (0,0,0)		
 NEMA phantom	The phantom nr 123 prepared in the lab with 44Sc and measured while placed on the dable in position -10 cm in y
+NEMA phantom 2	Repeated measurement

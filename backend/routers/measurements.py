@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 import database.models as models
 from database.database import get_session_local
 from backend.routers.common import generate_models
+from sqlalchemy import func
 from backend.utills.utills import get_random_user, get_random_experiment, get_random_tags, get_random_radioisotopes
 import faker
 import random
@@ -11,7 +12,12 @@ generator = faker.Faker()
 router = APIRouter()
 
 def generate_fake_measurement(db: Session=None):
+    all_experiments = db.query(models.Experiment.id).order_by(func.random())
+    experiments_list = [exp.id for exp in all_experiments]
+    experiments_list_size = len(experiments_list)
+    i = 0
     while True:
+        experiment_id = experiments_list[i % experiments_list_size]
         yield dict(
             name=generator.catch_phrase(),
             description=generator.text(max_nb_chars=200),
@@ -19,10 +25,11 @@ def generate_fake_measurement(db: Session=None):
             number_of_files=random.randint(1, 10),
             patient_reference=generator.text(max_nb_chars=200),
             shifter_id=get_random_user(db).id,
-            experiment_id=get_random_experiment(db).id,
+            experiment_id=experiment_id,
             tags=get_random_tags(db, random.randint(0, 2)),
             radioisotopes=get_random_radioisotopes(db, random.randint(0, 2))
         )
+        i += 1
 
 
 @router.get("/")

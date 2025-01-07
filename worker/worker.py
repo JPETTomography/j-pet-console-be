@@ -52,10 +52,10 @@ def save_data_to_db(json_data, agent_code):
     title = json_data['file']
     data = json_data['histogram'][0]
     detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
-
     experiment = session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
     measurement_match = session.query(Measurement).filter(Measurement.experiment_id == experiment.id)
     measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
+    print(f"agent_code: {agent_code}, detector: {detector.id}, experiment: {experiment.id}, measurement: {measurement}")
 
     try:
         # @TODO cover the agent_code field
