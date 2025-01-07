@@ -39,7 +39,8 @@ def read_measurements(db: Session = Depends(get_session_local)):
 @router.get("/{id}")
 def read_measurement(id: str, db: Session = Depends(get_session_local)):
     return db.query(models.Measurement).filter(models.Measurement.id == id).options(joinedload(models.Measurement.tags),
-                                                                                    joinedload(models.Measurement.radioisotopes)).first()
+                                                                                    joinedload(models.Measurement.radioisotopes),
+                                                                                    joinedload(models.Measurement.data_entry)).first()
 
 @router.post("/create_sample_measurements/")
 # @TODO remove this later
