@@ -49,7 +49,7 @@ jobs:
         run: |
           export DOCKER_HOST=tcp://localhost:2375
           export CORS_ORIGIN=${{secrets.CORS_ORIGIN}}
-          docker-compose -f docker-compose.yaml up -d
+          docker-compose -f docker-compose.yaml up -d --build
 
       - name: Initialize submodules and front-end
         run: |
@@ -58,4 +58,4 @@ jobs:
           cd j-pet-console-fe
           export DOCKER_HOST=tcp://localhost:2375
           export REACT_APP_API_SOURCE=${{secrets.REACT_APP_API_SOURCE}}
-          docker-compose -f docker-compose.yml up -d
+          docker-compose -f docker-compose.yml up -d --build
