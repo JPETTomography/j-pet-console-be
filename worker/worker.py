@@ -3,7 +3,8 @@ import json
 import argparse
 import pika
 from database.database import get_session_local
-from database.models import DataEntry
+from database.models import DataEntry, Measurement, Detector, Experiment
+from sqlalchemy import func, desc
 import logging
 
 # uncomment to debug
@@ -22,7 +23,7 @@ def receive_data(producer_ip: str, producer_port: str) -> dict:
                 break
             buffer += data
         json_data = json.loads(buffer)
-        print("Received JSON data:", json.dumps(json_data, indent=2))
+        # print("Received JSON data:", json.dumps(json_data, indent=2))
     return json_data
 
 
@@ -49,10 +50,22 @@ def consume_messages():
 def save_data_to_db(json_data, agent_code):
     session = get_session_local()
     title = json_data['file']
-    data = json_data['histogram']
+    data = json_data['histogram'][0]
+    detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
+    experiment = session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
+    measurement_match = session.query(Measurement).filter(Measurement.experiment_id == experiment.id)
+    measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
+    print(f"agent_code: {agent_code}, detector: {detector.id}, experiment: {experiment.id}, measurement: {measurement}")
+
     try:
         # @TODO cover the agent_code field
-        new_data_entry = DataEntry(title=title, data=data)
+        new_data_entry = DataEntry(
+            data=data,
+            name = "unnamed_entry",
+            histo_type = data['histo_type'],
+            histo_dir = data['histo_dir'],
+            measurement_id=measurement.id,
+        )
         session.add(new_data_entry)
         session.commit()
         print(f"Inserted data entry with title '{title}'")

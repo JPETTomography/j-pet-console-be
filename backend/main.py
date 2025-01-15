@@ -10,7 +10,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
 from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements, data_entry, meteo_readouts
 from backend.auth import create_access_token, verify_access_token
+from backend.fake_data.read_fake_data import fake_json
 import json
+import os
 
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials('user', 'password')
@@ -53,7 +55,7 @@ app.include_router(data_entry.router, prefix="/data_entry", tags=["data_entry"])
 app.include_router(meteo_readouts.router, prefix="/meteo_readouts", tags=["meteo_readouts"])
 
 origins = [
-    "http://localhost:3000", # local development
+    os.getenv("CORS_ORIGIN", "http://localhost:3000")
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -99,8 +101,8 @@ async def verify_user_token(token: str):
     return {"message": "Token is valid", "payload": payload}
 
 
-@app.get("/seed")
-def seed(db: Session = Depends(get_session_local), amount: int = 10):
+@app.get("/seed_random")
+def seed_random(db: Session = Depends(get_session_local), amount: int = 10):
     users.create_test_users(db)
     detectors.create_sample_detectors(db, amount)
     experiments.create_sample_experiments(db, amount)
@@ -109,7 +111,19 @@ def seed(db: Session = Depends(get_session_local), amount: int = 10):
     measurements.create_sample_measurements(db, amount)
     data_entry.create_sample_data_entries(db, amount)
     meteo_readouts.create_sample_meteo_readouts(db, amount)
+    return {"message": "Successfully seeded DB"}
 
+@app.get("/seed")
+def seed(db: Session = Depends(get_session_local), amount: int = 10):
+    fake_data = fake_json("backend/fake_data/Believable fake J-PET database - Sheet1.tsv")
+    users.create_test_users(db)
+    detectors.create_sample_detectors(db, fake_data=fake_data['Detector'])
+    experiments.create_sample_experiments(db, fake_data=fake_data['Experiment'])
+    tags.create_sample_tags(db, fake_data=fake_data['Tag'])
+    radioisotopes.create_sample_radioisotopes(db, fake_data=fake_data['Radioisotope'])
+    measurements.create_sample_measurements(db, fake_data=fake_data['Measurement'])
+    data_entry.create_sample_data_entries(db, amount)
+    meteo_readouts.create_sample_meteo_readouts(db, amount)
     return {"message": "Successfully seeded DB"}
 
 

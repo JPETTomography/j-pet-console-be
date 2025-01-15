@@ -6,12 +6,7 @@ import json
 import numpy
 from pathlib import Path
 
-def process_th1d(histogram, histo_desc):
-    nbins = histogram.GetNbinsX()
-    x = numpy.array([histogram.GetBinCenter(i)
-                    for i in range(1, nbins+1)])
-    y = numpy.array([histogram.GetBinContent(i)
-                    for i in range(1, nbins+1)])
+def fill_in_histo(x,y,histo_desc):
     histo_json = {
         "Title": histo_desc['Title'],
         "Options": histo_desc['Options'],
@@ -22,6 +17,15 @@ def process_th1d(histogram, histo_desc):
     }
     return histo_json
 
+def process_th1d(histogram, histo_desc):
+    nbins = histogram.GetNbinsX()
+    x = numpy.array([histogram.GetBinCenter(i)
+                    for i in range(1, nbins+1)])
+    y = numpy.array([histogram.GetBinContent(i)
+                    for i in range(1, nbins+1)])
+    histo_json = fill_in_histo(x, y, histo_desc)
+    return histo_json
+
 def process_th2d(histogram, histo_desc):
     x_edges = numpy.array([histogram.GetXaxis().GetBinLowEdge(
         i) for i in range(1, histogram.GetNbinsX() + 2)])
@@ -29,15 +33,8 @@ def process_th2d(histogram, histo_desc):
         i) for i in range(1, histogram.GetNbinsX() + 2)])
     content = numpy.array([[histogram.GetBinContent(i, j) for j in range(
         1, histogram.GetNbinsY()+1)] for i in range(1, histogram.GetNbinsX()+1)])
-    histo_json = {
-        "Title": histo_desc['Title'],
-        "Options": histo_desc['Options'],
-        "Description": histo_desc['Description'],
-        "Selection criteria": histo_desc['Selection criteria'],
-        "x": x_edges.tolist(),
-        "y": y_edges.tolist(),
-        "content": content.tolist()
-    }
+    histo_json = fill_in_histo(x_edges, y_edges, histo_desc)
+    histo_json["content"] = content.tolist()
     return histo_json
 
 def root_to_json(histo_list, root_file):
@@ -48,8 +45,11 @@ def root_to_json(histo_list, root_file):
         histo_json = {}
         if "TH1D" in histo_class:
             histo_json = process_th1d(histogram, histo_desc)
+            histo_json['histo_type'] = "TH1D"
         if "TH2D" in histo_class:
             histo_json = process_th2d(histogram, histo_desc)
+            histo_json['histo_type'] = "TH2D"
+        histo_json['histo_dir'] = root_dir.GetName()
     return histo_json
 
 def root_file_to_json(histo_def_file, file_name):

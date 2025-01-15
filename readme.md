@@ -45,6 +45,7 @@ docker compose up worker
 
 1. Download the repo
 2. Download the git submodule using
+3. Download data. Use `common/data_helpers/download_data.sh` to download exemplary files to `examplary_data_hold` folder and copy `histo_description.json` to `examplary_data`
 
 ```
 git submodule init
@@ -52,18 +53,20 @@ git submodule update --remote --recursive
 
 ```
 
-3. Run backend
+4. Run backend
 
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up
+docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up --build
 ```
 
-4. Run frontend
+5. Run frontend
 
 ```
 cd j-pet-console-fe
-docker compose -f docker-compose.yml up
+docker compose -f docker-compose.yml up --build
 ```
 
-5. Open http://localhost:8000/docs and trigger `seed`
+6. Open http://localhost:8000/docs and trigger `seed`
+7. Wait untill all of the services are up
+8. Copy any .root file from `examplary_data_hold` to `examplary_data` - this will trigger root conversion and upload

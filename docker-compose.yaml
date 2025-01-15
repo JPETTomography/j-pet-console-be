@@ -10,7 +10,8 @@ services:
       - db
       - rabbitmq
     environment:
-      - RABBITMQ_HOST=rabbitmq
+      RABBITMQ_HOST: "rabbitmq"
+      CORS_ORIGIN: "${CORS_ORIGIN:-localhost:3000}"
     restart: on-failure
 
   db:

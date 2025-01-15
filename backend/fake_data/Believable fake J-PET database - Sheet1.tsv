@@ -1,0 +1,42 @@
+Radioisotope			
+name	description	activity	halflife
+Na22 point like	Source activity measured on 13th November 2024	1.4	2.6019
+44Sc pellet	Scandium source in a form of a disk, 0.5 cm radius and 0.1 height, activity measured on 28/03/24 at 12:32	8.7	4.042
+44Sc rod	Plexi rod filled with scandium 44, length 50 cm, radius 0.2 cm	5.32	4.042
+44Sc NEMA	NEMA phantom with scandium 44	6.3	4.042
+66Ga Jaszczak	Galium 66 source in Jaszczak phantom 	3.4	9.5
+			
+Detector			
+name	description	status	
+Small Barrel	Small barrel - decomisioned	decomissioned	
+Large Barrel 	Large Barrel at WFAIS Lab	online	
+Modular Detector 	24 modules tomograph for clinical studies	online	
+CNB Modular	Two heads of 12 modules for proton beam monitoring	decomissioned	
+Red Module	Prototype of J-PEM with two layers and WLS	offline	
+Two Modules	Pair of modules travelling around the Europe (Trento & CERN)	offline	
+			
+Experiment			
+name	description		
+Modular Run 10	Small cylinder in J-LAB		
+Modular Run 6	Spherical chamber in J-LAB		
+CNB beam monitoring	Measurements in Bronowice		
+Krakow Hospital Trials	Series of clinical measurements in University Hospital		
+Large Barrel Run 11	Done with small cylinder		
+Warsaw Hospital	Clinical trials in Warsaw 		
+			
+Tag			
+name	description		
+physics	Fundamental physics investigations		
+patient	Clinical trials		
+phantom	Phantom filled with some isotope		
+calibration	Calibration measurements		
+test	test		
+			
+Measurement			
+name	description		
+Small cylinder day 123	Continous measurement with smal chamber for physics studies		
+Patient liver studies	Measurement done after CT scan of patient with liver cancer		
+Patient head	After CT-PET scan of the head		
+Calibration with open source	All purpose calibration, source placed in (0,0,0)		
+NEMA phantom	The phantom nr 123 prepared in the lab with 44Sc and measured while placed on the dable in position -10 cm in y
+NEMA phantom 2	Repeated measurement

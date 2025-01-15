@@ -2,9 +2,29 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
-from backend.utills.utills import generate_fake_user, generate_user
+import faker
+import random
 
 router = APIRouter()
+
+
+generator = faker.Faker()
+def generate_fake_user(db: Session=None):
+    while True:
+        yield models.User(
+            name=generator.name(),
+            email=generator.unique.email(),
+            password="Tajne123",
+            role=random.choices([None, "shifter", "coordinator", "admin"], weights=(50, 25, 15, 10))[0],
+        )
+
+def generate_user(name, email, password, role):
+    return models.User(
+        name=name,
+        email=email,
+        password=password,
+        role=role,
+    )
 
 @router.get("/")
 def read_users(db: Session = Depends(get_session_local)):
