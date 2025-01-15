@@ -12,6 +12,7 @@ from backend.routers import users, detectors, experiments, tags, radioisotopes, 
 from backend.auth import create_access_token, verify_access_token
 from backend.fake_data.read_fake_data import fake_json
 import json
+import os
 
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials('user', 'password')
@@ -54,7 +55,7 @@ app.include_router(data_entry.router, prefix="/data_entry", tags=["data_entry"])
 app.include_router(meteo_readouts.router, prefix="/meteo_readouts", tags=["meteo_readouts"])
 
 origins = [
-    "http://localhost:3000", # local development
+    os.getenv("CORS_ORIGIN", "http://localhost:3000")
 ]
 app.add_middleware(
     CORSMiddleware,
