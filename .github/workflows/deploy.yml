@@ -1,12 +1,10 @@
 name: Deploy
-
 on:
   workflow_dispatch:
 jobs:
   connect:
-    uses: ./.github/workflows/connec.yml  # Path to the reusable workflow
-
-  deploy:
+    uses: ./.github/workflows/connect.yml  # Path to the reusable workflow
+  deploy_backend:
     runs-on: ubuntu-latest
     needs: connect
     steps:
@@ -22,6 +20,15 @@ jobs:
           echo "${{ secrets.DEPLOY_VARIABLES }}" > custom.env
           docker-compose --env-file custom.env -f docker-compose.yaml down -v
           docker-compose --env-file custom.env -f docker-compose.yaml up -d --build
+
+  deploy_frontend:
+    runs-on: ubuntu-latest
+    needs: connect
+    steps:
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
 
       - name: Initialize submodules and front-end
         env:
