@@ -3,11 +3,45 @@ on:
   workflow_dispatch:
 jobs:
   connect:
-    uses: ./.github/workflows/connect.yml  # Path to the reusable workflow
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up OpenVPN
+        run: |
+          sudo apt-get update && sudo apt-get install -y openvpn
+          echo "${{ vars.OPENVPN_CONFIG }}" > openvpn-config.ovpn
+          echo "${{ secrets.OPENVPN_KEY }}" > openvpn.key
+          echo "${{ secrets.OPENVPN_CERT }}" > openvpn.crt
+          echo "${{ secrets.OPENVPN_CA }}" > ca.crt
+          # sudo openvpn --config openvpn-config.ovpn --daemon
+        env:
+          OPENVPN_CONFIG: ${{ vars.OPENVPN_CONFIG }}
+
+      - name: Connect to VPN
+        uses: "kota65535/github-openvpn-connect-action@v2"
+        with:
+          config_file: openvpn-config.ovpn
+          client_key: ${{ secrets.OPENVPN_KEY }}
+
+      - name: Set up SSH tunnel
+        run: |
+          mkdir ~/.ssh
+          ssh-keyscan -H ${{ secrets.REMOTE_SERVER }} >> ~/.ssh/known_hosts
+          eval `ssh-agent -s`
+          ssh-add - <<< "${{secrets.SSH_PRIVATE_KEY}}"
+          ssh -fN -v -L 2375:localhost:2375 ${{ secrets.SSH_USER }}@${{ secrets.REMOTE_SERVER }}
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+
   deploy_backend:
     runs-on: ubuntu-latest
     needs: connect
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: true # Recursively fetch all submodules
       - name: Install Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
