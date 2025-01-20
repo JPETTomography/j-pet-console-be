@@ -50,6 +50,6 @@ jobs:
           DOCKER_HOST: tcp://localhost:2375
         run: |
           echo "${{ secrets.DEPLOY_VARIABLES }}" > custom.env
-          docker-compose --env-file custom.env -f docker-compose.yaml down -v
+          docker-compose --env-file custom.env -f docker-compose.yaml down
           docker-compose --env-file custom.env -f docker-compose.yaml up -d --build
 
