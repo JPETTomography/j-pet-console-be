@@ -1,3 +1,6 @@
 [submodule "j-pet-console-fe"]
 	path = j-pet-console-fe
 	url = git@github.com:JPETTomography/j-pet-console-fe.git
+[submodule "agent"]
+	path = agent
+	url = git@github.com:JPETTomography/j-pet-console-agent.git
