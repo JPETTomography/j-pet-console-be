@@ -10,6 +10,13 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+roles_values = {
+    "": 0,
+    "shifter": 1,
+    "coordinator": 2,
+    "admin": 4
+}
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
@@ -20,7 +27,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_access_token(token: str):
+def verify_access_token(token: str, required_role: str = ""):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -31,6 +38,12 @@ def verify_access_token(token: str):
         user: int = payload.get("user")
         if user is None:
             raise credentials_exception
+        if roles_values[required_role] > roles_values[user["role"]]:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="You are not authorized to perform the action.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         return payload
     except jwt.PyJWTError:
         raise credentials_exception
