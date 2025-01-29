@@ -39,7 +39,7 @@ def new_radioisotope(name: str = Form(...), description: str = Form(...), activi
                      token: str = Form(...), db: Session = Depends(get_session_local)):
     radioisotope = generate_radioisotope(name=name, description=description, activity=activity, halflife=halflife)
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         db.add(radioisotope)
         db.commit()
@@ -56,7 +56,7 @@ def read_radioisotope(id: str, db: Session = Depends(get_session_local)):
 def edit_radioisotope(id: str, name: str = Form(...), description: str = Form(...), activity: float = Form(...), halflife: float = Form(...),
                       token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         radioisotope = db.query(models.Radioisotope).filter(models.Radioisotope.id == id).first()
         if not radioisotope:

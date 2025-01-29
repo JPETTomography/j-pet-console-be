@@ -17,6 +17,8 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 PERMITTED_ROLE = "coordinator"
 
+PERMITTED_ROLE = "coordinator"
+
 def generate_fake_experiment(db: Session=None):
     i = 0
     detector_ids = [d.id for d in db.query(models.Detector.id).distinct().all()]
@@ -57,7 +59,7 @@ def new_experiment(name: str = Form(...), description: str = Form(...), status: 
                    start_date: str = Form(...), end_date: Optional[str] = Form(None), coordinator_id: int = Form(...), detector_id: int = Form(...),
                    token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         start_date = datetime.fromisoformat(start_date)
         end_date = datetime.fromisoformat(end_date) if bool(end_date) else None
@@ -81,7 +83,7 @@ def edit_experiment(id: str, name: str = Form(...), description: str = Form(...)
                    start_date: str = Form(...), end_date: Optional[str] = Form(None), coordinator_id: int = Form(...), detector_id: int = Form(...),
                    token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         experiment = db.query(models.Experiment).filter(models.Experiment.id == id).first()
         if not experiment:
