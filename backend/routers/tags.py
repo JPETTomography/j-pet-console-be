@@ -13,6 +13,8 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 PERMITTED_ROLE = "shifter"
 
+PERMITTED_ROLE = "shifter"
+
 def generate_fake_tag(db: Session=None):
     while True:
         color = "%06x" % random.randint(0, 0xFFFFFF)
@@ -38,7 +40,7 @@ def new_tag(name: str = Form(...), description: str = Form(...), color: str = Fo
             token: str = Form(...), db: Session = Depends(get_session_local)):
     tag = generate_tag(name=name, description=description, color=color)
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         db.add(tag)
         db.commit()
@@ -55,7 +57,7 @@ def read_tag(id: str, db: Session = Depends(get_session_local)):
 def edit_tag(id: str, name: str = Form(...), description: str = Form(...), color: str = Form(...),
              token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         tag = db.query(models.Tag).filter(models.Tag.id == id).first()
         if not tag:

@@ -14,6 +14,8 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 PERMITTED_ROLE = "coordinator"
 
+PERMITTED_ROLE = "coordinator"
+
 def generate_fake_detector(db: Session=None):
     i = 0
     while True:
@@ -45,7 +47,7 @@ def new_detector(name: str = Form(...), description: str = Form(...), status: st
                  token: str = Form(...), db: Session = Depends(get_session_local)):
     detector = generate_detector(name=name, description=description, status=status, agent_code=agent_code)
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         db.add(detector)
         db.commit()
@@ -62,7 +64,7 @@ def read_detector(id: str, db: Session = Depends(get_session_local)):
 def edit_detector(id: str, name: str = Form(...), description: str = Form(...), status: str = Form(...), agent_code: str = Form(...),
                   token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE, db)
+        verify_access_token(token, PERMITTED_ROLE)
 
         detector = db.query(models.Detector).filter(models.Detector.id == id).first()
         if not detector:
