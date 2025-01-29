@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 import database.models as models
+from backend.auth import verify_access_token
 from database.database import get_session_local
 from backend.auth import get_current_user
 from backend.routers.common import generate_models
@@ -8,9 +9,10 @@ import uuid
 import faker
 import random
 
-
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
+
+PERMITTED_ROLE = "coordinator"
 
 def generate_fake_detector(db: Session=None):
     i = 0
@@ -26,13 +28,57 @@ def generate_fake_detector(db: Session=None):
         )
         i+=1
 
+def generate_detector(name: str, description: str, status: str, agent_code: str):
+    return models.Detector(
+        name=name,
+        description=description,
+        status=status,
+        agent_code=agent_code
+    )
+
 @router.get("/")
 def read_detectors(db: Session = Depends(get_session_local)):
     return db.query(models.Detector).all()
 
+@router.post("/new")
+def new_detector(name: str = Form(...), description: str = Form(...), status: str = Form(...), agent_code: str = Form(...),
+                 token: str = Form(...), db: Session = Depends(get_session_local)):
+    detector = generate_detector(name=name, description=description, status=status, agent_code=agent_code)
+    try:
+        verify_access_token(token, PERMITTED_ROLE)
+
+        db.add(detector)
+        db.commit()
+        return {"message": "Detector successfully created"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create detector: {str(e)}")
+
 @router.get("/{id}")
 def read_detector(id: str, db: Session = Depends(get_session_local)):
     return db.query(models.Detector).filter(models.Detector.id == id).first() or f"No detector with {id} id has been found."
+
+@router.patch("/{id}/edit")
+def edit_detector(id: str, name: str = Form(...), description: str = Form(...), status: str = Form(...), agent_code: str = Form(...),
+                  token: str = Form(...), db: Session = Depends(get_session_local)):
+    try:
+        verify_access_token(token, PERMITTED_ROLE)
+
+        detector = db.query(models.Detector).filter(models.Detector.id == id).first()
+        if not detector:
+            raise HTTPException(status_code=404, detail="Detector not found")
+
+        detector.name = name
+        detector.description = description
+        detector.status = status
+        detector.agent_code = agent_code
+
+        db.commit()
+        db.refresh(detector)
+        return {"message": "Detector updated"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update detector: {str(e)}")
 
 @router.post("/create_sample_detectors/")
 # @TODO remove this later
