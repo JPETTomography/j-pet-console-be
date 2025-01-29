@@ -84,7 +84,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         models.User.email == form_data.username).first()
     if not user or not user.verify_password(form_data.password):
         raise HTTPException(
-            status_code=400, detail="Incorrect username or password")
+            status_code=400, detail="Incorrect email or password")
     access_token = create_access_token({
         "user": {
             "name": user.name,
