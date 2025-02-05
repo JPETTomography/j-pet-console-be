@@ -57,7 +57,7 @@ git submodule update --remote --recursive
 
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up --build
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
 ```
 
 5. Run frontend
@@ -65,6 +65,15 @@ docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-com
 ```
 cd j-pet-console-fe
 docker compose -f docker-compose.yml up --build
+```
+
+6. Run Agent
+
+```
+cd agent
+cp examplary_config.yaml config.yaml
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+
 ```
 
 6. Open http://localhost:8000/docs and trigger `seed`
