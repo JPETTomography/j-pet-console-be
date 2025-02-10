@@ -5,6 +5,3 @@ services:
   worker:
     volumes:
       - .:/app
-  agent:
-    volumes:
-      - .:/app
