@@ -101,7 +101,7 @@ async def verify_user_token(token: str):
     return {"message": "Token is valid", "payload": payload}
 
 
-@app.get("/seed_random")
+@app.get("/seed_random_data")
 def seed_random(db: Session = Depends(get_session_local), amount: int = 10):
     users.create_test_users(db)
     detectors.create_sample_detectors(db, amount)
@@ -113,9 +113,12 @@ def seed_random(db: Session = Depends(get_session_local), amount: int = 10):
     meteo_readouts.create_sample_meteo_readouts(db, amount)
     return {"message": "Successfully seeded DB"}
 
-@app.get("/seed")
-def seed(db: Session = Depends(get_session_local), amount: int = 10):
-    fake_data = fake_json("backend/fake_data/Believable fake J-PET database - Sheet1.tsv")
+@app.get("/seed_with_fake_data/")
+def seed(db: Session = Depends(get_session_local), amount: int = 3):
+    # this is full data
+    # fake_data = fake_json("backend/fake_data/Believable fake J-PET database - Sheet1.tsv")
+    # this is smaller number of fake data
+    fake_data = fake_json("backend/fake_data/small_data.tsv")
     users.create_test_users(db)
     detectors.create_sample_detectors(db, fake_data=fake_data['Detector'])
     experiments.create_sample_experiments(db, fake_data=fake_data['Experiment'])
