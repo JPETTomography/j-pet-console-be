@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, selectinload, load_only, joinedload
 import database.models as models
 from database.database import get_session_local
 from backend.utills.utills import get_random_user, get_random_detector
 from backend.routers.common import generate_models
+from typing import List
 import random
 import faker
 from datetime import timedelta
@@ -38,9 +39,19 @@ def read_experiments(db: Session = Depends(get_session_local)):
 def read_experiment(id: str, db: Session = Depends(get_session_local)):
     return db.query(models.Experiment).filter(models.Experiment.id == id).options(selectinload(models.Experiment.coordinator).load_only(models.User.name)).first() or f"No experiment with id: {id} found."
 
-@router.get("/{id}/measurements")
-def read_experiment_measurements(id: str, db: Session = Depends(get_session_local)):
-    return db.query(models.Measurement).filter(models.Measurement.experiment_id == id).options(joinedload(models.Measurement.tags)).all()
+@router.get("/{id}/measurements", response_model=List[models.Measurement])
+def read_experiment_measurements(
+        id: str,
+        db: Session = Depends(get_session_local),
+        page: int = Query(1, ge=1),
+        size: int = Query(10, le=10)
+):
+    offset = (page - 1) * size
+    measurements = db.query(models.Measurement).filter(models.Measurement.experiment_id == id)
+    measurements = measurements.options(joinedload(models.Measurement.tags)).limit(size).offset(offset).all()
+    if not measurements:
+        raise HTTPException(status_code=404, detail=f"No measurements found for experiment with id: {id}")
+    return measurements
 
 @router.post("/create_sample_experiments/")
 # @TODO remove this later
