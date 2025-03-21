@@ -44,7 +44,7 @@ def new_user(name: str = Form(...), email: str = Form(...), password: str = Form
              token: str = Form(...), db: Session = Depends(get_session_local)):
     user = generate_user(name=name, email=email, password=password, role=role)
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         db.add(user)
         db.commit()
@@ -61,7 +61,7 @@ def read_user(id: str, db: Session = Depends(get_session_local)):
 def edit_user(id: str, name: str = Form(...), email: str = Form(...), role: str = Form(...),
               token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         user = db.query(models.User).filter(models.User.id == id).first()
         if not user:

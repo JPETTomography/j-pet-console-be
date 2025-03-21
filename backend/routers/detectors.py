@@ -45,7 +45,7 @@ def new_detector(name: str = Form(...), description: str = Form(...), status: st
                  token: str = Form(...), db: Session = Depends(get_session_local)):
     detector = generate_detector(name=name, description=description, status=status, agent_code=agent_code)
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         db.add(detector)
         db.commit()
@@ -62,7 +62,7 @@ def read_detector(id: str, db: Session = Depends(get_session_local)):
 def edit_detector(id: str, name: str = Form(...), description: str = Form(...), status: str = Form(...), agent_code: str = Form(...),
                   token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         detector = db.query(models.Detector).filter(models.Detector.id == id).first()
         if not detector:

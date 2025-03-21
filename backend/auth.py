@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import database.models as models
+from database.database import get_session_local
 from fastapi.security import OAuth2PasswordBearer
 
 SECRET_KEY = "KROWAJETRAWE"  # TODO Change this to a strong secret
@@ -50,7 +51,6 @@ def verify_access_token(token: str, required_role: str = ""):
             )
 
         user = payload.get("user")
-        print(user)
         if user is None:
             raise credentials_exception
         if roles_values[required_role] > roles_values[user["role"]]:
@@ -73,6 +73,6 @@ def verify_access_token(token: str, required_role: str = ""):
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = verify_access_token(token)
-        return payload["user"]  # Return the user ID or other user-related data
+        return payload["user"]
     except HTTPException as e:
         raise e
