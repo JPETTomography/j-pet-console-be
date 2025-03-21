@@ -38,7 +38,7 @@ def new_tag(name: str = Form(...), description: str = Form(...), color: str = Fo
             token: str = Form(...), db: Session = Depends(get_session_local)):
     tag = generate_tag(name=name, description=description, color=color)
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         db.add(tag)
         db.commit()
@@ -55,7 +55,7 @@ def read_tag(id: str, db: Session = Depends(get_session_local)):
 def edit_tag(id: str, name: str = Form(...), description: str = Form(...), color: str = Form(...),
              token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         tag = db.query(models.Tag).filter(models.Tag.id == id).first()
         if not tag:

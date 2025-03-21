@@ -98,9 +98,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": access_token, "token_type": "bearer", "user": user_data}
 
 
+
 @app.post("/verify-token")
-async def verify_user_token(token: str = Depends(oauth2_scheme)):
-    payload = verify_access_token(token)
+async def verify_user_token(token: str):
+    payload = verify_access_token(token=token)
     return {"message": "Token is valid", "payload": payload}
 
 

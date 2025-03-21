@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import database.models as models
+from database.database import get_session_local
 from fastapi.security import OAuth2PasswordBearer
 
 SECRET_KEY = "KROWAJETRAWE"  # TODO Change this to a strong secret

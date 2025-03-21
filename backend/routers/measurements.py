@@ -56,7 +56,7 @@ def new_measurement(name: str = Form(...), description: str = Form(...), directo
                    patient_reference: str = Form(...), shifter_id: int = Form(...), experiment_id: int = Form(...),
                    token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         measurement = generate_measurement(name=name, description=description, directory=directory, number_of_files=number_of_files,
                                            patient_reference=patient_reference, shifter_id=shifter_id, experiment_id=experiment_id)
@@ -136,7 +136,7 @@ def edit_measurement(id: str, name: str = Form(...), description: str = Form(...
                      patient_reference: str = Form(...), shifter_id: int = Form(...),
                      token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         measurement = db.query(models.Measurement).filter(models.Measurement.id == id).first()
         if not measurement:
