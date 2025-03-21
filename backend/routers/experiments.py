@@ -55,7 +55,7 @@ def new_experiment(name: str = Form(...), description: str = Form(...), status: 
                    start_date: str = Form(...), end_date: Optional[str] = Form(None), coordinator_id: int = Form(...), detector_id: int = Form(...),
                    token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         start_date = datetime.fromisoformat(start_date)
         end_date = datetime.fromisoformat(end_date) if bool(end_date) else None
@@ -79,7 +79,7 @@ def edit_experiment(id: str, name: str = Form(...), description: str = Form(...)
                    start_date: str = Form(...), end_date: Optional[str] = Form(None), coordinator_id: int = Form(...), detector_id: int = Form(...),
                    token: str = Form(...), db: Session = Depends(get_session_local)):
     try:
-        verify_access_token(token, PERMITTED_ROLE)
+        verify_access_token(token, PERMITTED_ROLE, db)
 
         experiment = db.query(models.Experiment).filter(models.Experiment.id == id).first()
         if not experiment:
