@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, selectinload, load_only, joinedload
 import database.models as models
 from database.database import get_session_local
+from backend.auth import get_current_user
 from backend.utills.utills import get_random_user, get_random_detector
 from backend.routers.common import generate_models
 from typing import List
@@ -10,7 +11,7 @@ import faker
 from datetime import timedelta
 
 generator = faker.Faker()
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 def generate_fake_experiment(db: Session=None):
     i = 0
