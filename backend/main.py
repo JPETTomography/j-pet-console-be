@@ -9,7 +9,7 @@ from backend.admin import UserAdmin, DetectorAdmin, ExperimentAdmin, TagAdmin, R
 from fastapi.security import OAuth2PasswordRequestForm
 from database.database import get_session_local
 from backend.routers import users, detectors, experiments, tags, radioisotopes, measurements, data_entry, meteo_readouts
-from backend.auth import create_access_token, verify_access_token
+from backend.auth import create_access_token, verify_access_token, oauth2_scheme
 from backend.fake_data.read_fake_data import fake_json
 import json
 import os
@@ -59,7 +59,7 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,18 +85,21 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not user.verify_password(form_data.password):
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
-    access_token = create_access_token({
-        "user": {
+    
+    user_data = {
             "name": user.name,
             "email": user.email,
-            "role": user.role
+            "role": user.role,
+            "id": user.id
         }
+    access_token = create_access_token({
+        "user": user_data
     })
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": user_data}
 
 
-@app.get("/verify-token/{token}")
-async def verify_user_token(token: str):
+@app.post("/verify-token")
+async def verify_user_token(token: str = Depends(oauth2_scheme)):
     payload = verify_access_token(token)
     return {"message": "Token is valid", "payload": payload}
 

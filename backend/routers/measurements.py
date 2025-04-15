@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 import database.models as models
 from database.database import get_session_local
+from backend.auth import get_current_user
 from backend.routers.common import generate_models
 from sqlalchemy import func
 from backend.utills.utills import get_random_user, get_random_experiment, get_random_tags, get_random_radioisotopes
@@ -9,7 +10,7 @@ import faker
 import random
 
 generator = faker.Faker()
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 def generate_fake_measurement(db: Session=None):
     all_experiments = db.query(models.Experiment.id).order_by(func.random())
@@ -40,7 +41,16 @@ def read_measurements(db: Session = Depends(get_session_local)):
 def read_measurement(id: str, db: Session = Depends(get_session_local)):
     return db.query(models.Measurement).filter(models.Measurement.id == id).options(joinedload(models.Measurement.tags),
                                                                                     joinedload(models.Measurement.radioisotopes),
-                                                                                    joinedload(models.Measurement.data_entry)).first()
+                                                                                    joinedload(models.Measurement.data_entry),
+                                                                                    joinedload(models.Measurement.comments)).first()
+
+# @router.put("/{id}/comment")
+# def update_measurement_comment(id: str, comment: str, db: Session = Depends(get_session_local)):
+#     measurement = db.query(models.Measurement).filter(models.Measurement.id == id).first()
+#     if not measurement:
+#         raise HTTPException(status_code=404, detail="Measurement not found")
+#     comment = models.Comment(comment=comment, measurement_id=measurement.id, user_id)
+        
 
 @router.post("/create_sample_measurements/")
 # @TODO remove this later

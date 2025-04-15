@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
+from backend.auth import get_current_user
 from backend.routers.common import generate_models
 import uuid
 import faker
@@ -9,7 +10,7 @@ import random
 
 
 generator = faker.Faker()
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 def generate_fake_detector(db: Session=None):
     i = 0

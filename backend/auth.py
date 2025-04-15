@@ -28,9 +28,39 @@ def verify_access_token(token: str):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user: int = payload.get("user")
+
+        exp = payload.get("exp")
+        if exp is None:
+            raise credentials_exception
+
+        current_time = datetime.now(tz=timezone.utc)
+        expiration_time = datetime.fromtimestamp(exp, tz=timezone.utc)
+        if expiration_time < current_time:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        user = payload.get("user")
+        print(user)
         if user is None:
             raise credentials_exception
+
         return payload
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except jwt.PyJWTError:
         raise credentials_exception
+    
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = verify_access_token(token)
+        return payload["user"]  # Return the user ID or other user-related data
+    except HTTPException as e:
+        raise e
