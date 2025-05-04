@@ -41,16 +41,7 @@ def read_measurements(db: Session = Depends(get_session_local)):
 def read_measurement(id: str, db: Session = Depends(get_session_local)):
     return db.query(models.Measurement).filter(models.Measurement.id == id).options(joinedload(models.Measurement.tags),
                                                                                     joinedload(models.Measurement.radioisotopes),
-                                                                                    joinedload(models.Measurement.data_entry),
-                                                                                    joinedload(models.Measurement.comments)).first()
-
-# @router.put("/{id}/comment")
-# def update_measurement_comment(id: str, comment: str, db: Session = Depends(get_session_local)):
-#     measurement = db.query(models.Measurement).filter(models.Measurement.id == id).first()
-#     if not measurement:
-#         raise HTTPException(status_code=404, detail="Measurement not found")
-#     comment = models.Comment(comment=comment, measurement_id=measurement.id, user_id)
-        
+                                                                                    joinedload(models.Measurement.data_entry)).first()
 
 @router.post("/create_sample_measurements/")
 # @TODO remove this later
