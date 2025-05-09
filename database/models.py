@@ -117,6 +117,7 @@ class Measurement(Base):
     radioisotopes = relationship("Radioisotope", secondary="radioisotope_measurement", back_populates="measurements")
     data_entry = relationship("DataEntry", back_populates="measurement")
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
+    comments = relationship("Comment", back_populates="measurement")
 
 class DataEntry(Base):
     __tablename__ = 'data_entry'
@@ -154,3 +155,15 @@ class MeteoReadout(Base):
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
     measurement = relationship("Measurement", back_populates="meteo_readouts")
+
+
+class Comment(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement = relationship("Measurement", back_populates="comments")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship("User")
