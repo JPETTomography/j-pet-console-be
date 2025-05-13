@@ -43,7 +43,6 @@ def verify_access_token(token: str):
             )
 
         user = payload.get("user")
-        print(user)
         if user is None:
             raise credentials_exception
 
