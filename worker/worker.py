@@ -18,7 +18,7 @@ def receive_data(producer_ip: str, producer_port: str) -> dict:
         buffer = ""
         client_socket.settimeout(15)
         while True:
-            data = client_socket.recv(4096).decode('utf-8')
+            data = client_socket.recv(4096).decode("utf-8")
             if not data:
                 break
             buffer += data
@@ -30,40 +30,43 @@ def receive_data(producer_ip: str, producer_port: str) -> dict:
 TOPIC = "root_json"
 
 rabbitmq_host = "rabbitmq"
-credentials = pika.PlainCredentials('user', 'password')
-parameters = pika.ConnectionParameters(
-    rabbitmq_host,
-    5672,
-    '/',
-    credentials
-)
+credentials = pika.PlainCredentials("user", "password")
+parameters = pika.ConnectionParameters(rabbitmq_host, 5672, "/", credentials)
+
 
 def consume_messages():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
-    channel.queue_declare(queue='worker_topic', durable=True)
+    channel.queue_declare(queue="worker_topic", durable=True)
     channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue='worker_topic', on_message_callback=callback)
+    channel.basic_consume(queue="worker_topic", on_message_callback=callback)
     print("Waiting for messages...")
     channel.start_consuming()
 
+
 def save_data_to_db(json_data, agent_code):
     session = get_session_local()
-    title = json_data['file']
-    data = json_data['histogram'][0]
+    title = json_data["file"]
+    data = json_data["histogram"][0]
     detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
-    experiment = session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
-    measurement_match = session.query(Measurement).filter(Measurement.experiment_id == experiment.id)
+    experiment = (
+        session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
+    )
+    measurement_match = session.query(Measurement).filter(
+        Measurement.experiment_id == experiment.id
+    )
     measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
-    print(f"agent_code: {agent_code}, detector: {detector.id}, experiment: {experiment.id}, measurement: {measurement}")
+    print(
+        f"agent_code: {agent_code}, detector: {detector.id}, experiment: {experiment.id}, measurement: {measurement}"
+    )
 
     try:
         # @TODO cover the agent_code field
         new_data_entry = DataEntry(
             data=data,
-            name = "unnamed_entry",
-            histo_type = data['histo_type'],
-            histo_dir = data['histo_dir'],
+            name="unnamed_entry",
+            histo_type=data["histo_type"],
+            histo_dir=data["histo_dir"],
             measurement_id=measurement.id,
         )
         session.add(new_data_entry)
@@ -78,8 +81,8 @@ def save_data_to_db(json_data, agent_code):
 
 def callback(ch, method, properties, body):
     producer_info = json.loads(body.decode())
-    address, port = producer_info['ip'], producer_info['port']
-    agent_code = producer_info['agent_code']
+    address, port = producer_info["ip"], producer_info["port"]
+    agent_code = producer_info["agent_code"]
     print(f"Received producer IP and port info: {producer_info}")
     try:
         json_data = receive_data(address, port)
@@ -96,4 +99,3 @@ def callback(ch, method, properties, body):
 
 if __name__ == "__main__":
     consume_messages()
-
