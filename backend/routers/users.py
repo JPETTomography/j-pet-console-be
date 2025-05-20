@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from backend.auth import get_current_user
 import database.models as models
 from database.database import get_session_local
 import faker
 import random
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 generator = faker.Faker()

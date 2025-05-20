@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 import database.models as models
 from database.database import get_session_local
+from backend.auth import get_current_user
 from backend.routers.common import generate_models
 from sqlalchemy import func
 from backend.utills.utills import get_random_user, get_random_experiment, get_random_tags, get_random_radioisotopes
@@ -9,7 +10,7 @@ import faker
 import random
 
 generator = faker.Faker()
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 def generate_fake_measurement(db: Session=None):
     all_experiments = db.query(models.Experiment.id).order_by(func.random())
