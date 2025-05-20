@@ -60,6 +60,6 @@ def verify_access_token(token: str):
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = verify_access_token(token)
-        return payload["user"]  # Return the user ID or other user-related data
+        return payload["user"]
     except HTTPException as e:
         raise e
