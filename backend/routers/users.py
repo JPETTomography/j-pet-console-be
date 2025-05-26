@@ -2,14 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, EmailStr
-from backend.auth import get_current_user
+from backend.auth import get_current_user_with_role, Role
 import database.models as models
 from database.database import get_session_local
 import faker
 import random
 
-router = APIRouter(dependencies=[Depends(get_current_user)])
-ROLE = "admin"
+router = APIRouter(dependencies=[Depends(get_current_user_with_role(Role.ADMIN))])
 
 generator = faker.Faker()
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, selectinload, joinedload
 from pydantic import BaseModel, Field
 import database.models as models
 from database.database import get_session_local
-from backend.auth import get_current_user
+from backend.auth import get_current_user_with_role, Role, get_current_user
 from backend.utills.utills import get_random_user
 from backend.routers.common import generate_models
 import random
@@ -13,7 +13,6 @@ from datetime import timedelta, datetime
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
-ROLE = "coordinator"
 
 
 class ExperimentBase(BaseModel):
@@ -86,7 +85,9 @@ def read_experiments(db: Session = Depends(get_session_local)):
 
 @router.post("/new")
 def new_experiment(
-    experiment_data: ExperimentBase, db: Session = Depends(get_session_local)
+    experiment_data: ExperimentBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.COORDINATOR)),
 ):
     try:
         experiment = generate_experiment(
@@ -124,7 +125,10 @@ def read_experiment(id: str, db: Session = Depends(get_session_local)):
 
 @router.patch("/{id}/edit")
 def edit_experiment(
-    id: str, experiment_data: ExperimentBase, db: Session = Depends(get_session_local)
+    id: str,
+    experiment_data: ExperimentBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.COORDINATOR)),
 ):
     try:
         experiment = (

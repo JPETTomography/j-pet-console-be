@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 import database.models as models
-from backend.auth import get_current_user
+from backend.auth import get_current_user_with_role, Role, get_current_user
 from database.database import get_session_local
 from backend.routers.common import generate_models
 import faker
@@ -10,7 +10,6 @@ import random
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
-ROLE = "shifter"
 
 
 class TagBase(BaseModel):
@@ -43,7 +42,11 @@ def read_tags(db: Session = Depends(get_session_local)):
 
 
 @router.post("/new")
-def new_tag(tag_data: TagBase, db: Session = Depends(get_session_local)):
+def new_tag(
+    tag_data: TagBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.SHIFTER)),
+):
     tag = generate_tag(
         name=tag_data.name,
         description=tag_data.description,
@@ -67,7 +70,12 @@ def read_tag(id: str, db: Session = Depends(get_session_local)):
 
 
 @router.patch("/{id}/edit")
-def edit_tag(id: str, tag_data: TagBase, db: Session = Depends(get_session_local)):
+def edit_tag(
+    id: str,
+    tag_data: TagBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.SHIFTER)),
+):
     try:
         tag = db.query(models.Tag).filter(models.Tag.id == id).first()
         if not tag:

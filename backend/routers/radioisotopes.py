@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 import database.models as models
-from backend.auth import get_current_user
+from backend.auth import get_current_user_with_role, Role, get_current_user
 from database.database import get_session_local
 from backend.routers.common import generate_models
 import faker
@@ -48,7 +48,9 @@ def read_radioisotopes(db: Session = Depends(get_session_local)):
 
 @router.post("/new")
 def new_radioisotope(
-    radioisotope_data: RadioisotopeBase, db: Session = Depends(get_session_local)
+    radioisotope_data: RadioisotopeBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.SHIFTER)),
 ):
     try:
         radioisotope = generate_radioisotope(
@@ -84,6 +86,7 @@ def edit_radioisotope(
     id: str,
     radioisotope_data: RadioisotopeBase,
     db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.SHIFTER)),
 ):
     try:
         radioisotope = (

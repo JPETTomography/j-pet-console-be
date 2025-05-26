@@ -5,13 +5,19 @@ from sqlalchemy.orm import Session
 import database.models as models
 from database.database import get_session_local
 from fastapi.security import OAuth2PasswordBearer
+from enum import Enum
 
 SECRET_KEY = "KROWAJETRAWE"  # TODO Change this to a strong secret
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-roles_values = {"": 0, "shifter": 1, "coordinator": 2, "admin": 4}
+
+class Role(Enum):
+    NONE = 0
+    SHIFTER = 1
+    COORDINATOR = 2
+    ADMIN = 4
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -27,7 +33,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def verify_access_token(token: str, required_role: str = ""):
+def verify_access_token(token: str, required_role: Role = Role.NONE):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -51,7 +57,9 @@ def verify_access_token(token: str, required_role: str = ""):
         user = payload.get("user")
         if user is None:
             raise credentials_exception
-        if roles_values[required_role] > roles_values[user["role"]]:
+
+        user_role = Role[user["role"].upper()]
+        if required_role.value > user_role.value:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="You are not authorized to perform the action.",
@@ -67,6 +75,11 @@ def verify_access_token(token: str, required_role: str = ""):
         )
     except jwt.PyJWTError:
         raise credentials_exception
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role",
+        )
 
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -75,3 +88,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return payload["user"]
     except HTTPException as e:
         raise e
+
+
+def get_current_user_with_role(required_role: Role):
+    def verify_user_role(token: str = Depends(oauth2_scheme)):
+        try:
+            payload = verify_access_token(token, required_role)
+            return payload["user"]
+        except HTTPException as e:
+            raise e
+
+    return verify_user_role

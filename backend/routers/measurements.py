@@ -3,17 +3,18 @@ from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel, Field
 import database.models as models
 from database.database import get_session_local
-from backend.auth import get_current_user
-from backend.routers.common import generate_models
-from sqlalchemy import asc,func
-from backend.utills.utills import get_random_user, get_random_experiment, get_random_tags, get_random_radioisotopes
+from backend.auth import get_current_user_with_role, Role, get_current_user
+from sqlalchemy import func
+from backend.utills.utills import (
+    get_random_user,
+    get_random_tags,
+    get_random_radioisotopes,
+)
 import faker
 import random
-from pydantic import BaseModel
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
-ROLE = "shifter"
 
 
 class MeasurementBase(BaseModel):
@@ -76,7 +77,9 @@ def read_measurements(db: Session = Depends(get_session_local)):
 
 @router.post("/new")
 def new_measurement(
-    measurement_data: MeasurementBase, db: Session = Depends(get_session_local)
+    measurement_data: MeasurementBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.SHIFTER)),
 ):
     try:
         measurement = generate_measurement(
@@ -165,7 +168,10 @@ def add_measurement_comment(
 
 @router.patch("/{id}/edit")
 def edit_measurement(
-    id: str, measurement_data: MeasurementBase, db: Session = Depends(get_session_local)
+    id: str,
+    measurement_data: MeasurementBase,
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.SHIFTER)),
 ):
     try:
         measurement = (
