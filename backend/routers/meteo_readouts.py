@@ -13,11 +13,15 @@ generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-def generate_fake_meteo_readout(db: Session=None):
+def generate_fake_meteo_readout(db: Session = None):
     while True:
         yield dict(
-            station_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
-            agent_time=generator.date_time_this_year(before_now=True, after_now=False, tzinfo=None),
+            station_time=generator.date_time_this_year(
+                before_now=True, after_now=False, tzinfo=None
+            ),
+            agent_time=generator.date_time_this_year(
+                before_now=True, after_now=False, tzinfo=None
+            ),
             p_atm=float(random.random()),
             p_1=float(random.random()),
             p_2=float(random.random()),
@@ -25,21 +29,31 @@ def generate_fake_meteo_readout(db: Session=None):
             hum_2=float(random.random()),
             temp_1=float(random.random()),
             temp_2=float(random.random()),
-            measurement_id=get_random_measurement(db).id
+            measurement_id=get_random_measurement(db).id,
         )
+
 
 @router.get("/")
 def read_meteo_readouts(db: Session = Depends(get_session_local)):
     return db.query(models.MeteoReadout).all()
 
+
 @router.get("/{id}")
 def read_meteo_readout(id: str, db: Session = Depends(get_session_local)):
-    return db.query(models.MeteoReadout).filter(models.MeteoReadout.id == id).first() or f"No meteo readout with {id} id has been found."
+    return (
+        db.query(models.MeteoReadout).filter(models.MeteoReadout.id == id).first()
+        or f"No meteo readout with {id} id has been found."
+    )
+
 
 @router.post("/create_sample_meteo_readouts/")
 # @TODO remove this later
-def create_sample_meteo_readouts(db: Session = Depends(get_session_local), amount: int = 10, fake_data:dict=None):
-    meteo_readouts = generate_models(models.MeteoReadout, generate_fake_meteo_readout, db, amount, fake_data)
+def create_sample_meteo_readouts(
+    db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
+):
+    meteo_readouts = generate_models(
+        models.MeteoReadout, generate_fake_meteo_readout, db, amount, fake_data
+    )
     try:
         db.add_all(meteo_readouts)
         db.commit()

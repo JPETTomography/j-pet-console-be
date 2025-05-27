@@ -5,15 +5,16 @@ import csv
 def parse_section(lines):
     header = lines[0]
     records = []
-    for row in csv.DictReader(lines[1:], delimiter='\t'):
+    for row in csv.DictReader(lines[1:], delimiter="\t"):
         if "" in row.keys():
             del row[""]
         records.append(row)
     return header.strip(), records
 
+
 def fake_json(file_path: str) -> dict:
     result = {}
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         lines = file.readlines()
         section_lines = []
 
@@ -30,6 +31,6 @@ def fake_json(file_path: str) -> dict:
     return result
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     file_path = "Believable fake J-PET database - Sheet1.tsv"
     print(fake_json(file_path))
