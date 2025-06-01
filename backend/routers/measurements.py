@@ -5,11 +5,7 @@ import database.models as models
 from database.database import get_session_local
 from backend.auth import get_current_user_with_role, Role, get_current_user
 from sqlalchemy import func
-from backend.utills.utills import (
-    get_random_user,
-    get_random_tags,
-    get_random_radioisotopes,
-)
+from backend.utills.utills import get_random_user, get_random_tags, get_random_radioisotopes
 import faker
 import random
 
@@ -17,6 +13,7 @@ generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
+# Measurement base model
 class MeasurementBase(BaseModel):
     name: str = Field(..., example="Measurement Name")
     description: str = Field(..., example="A detailed description of the measurement")
@@ -27,6 +24,7 @@ class MeasurementBase(BaseModel):
     experiment_id: int = Field(..., example=1)
 
 
+# Generate fake data for testing
 def generate_fake_measurement(db: Session = None):
     all_experiments = db.query(models.Experiment.id).order_by(func.random())
     experiments_list = [exp.id for exp in all_experiments]
@@ -70,6 +68,7 @@ def generate_measurement(
     )
 
 
+# CRUD endpoints for measurements
 @router.get("/")
 def read_measurements(db: Session = Depends(get_session_local)):
     return db.query(models.Measurement).all()
@@ -120,7 +119,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
     comments = (
         db.query(models.Comment)
         .filter(models.Comment.measurement_id == id)
-        .options(joinedload(models.Comment.user)) 
+        .options(joinedload(models.Comment.user))
         .order_by(models.Comment.created_at.asc())
         .all()
     )
@@ -129,8 +128,10 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
 
     return measurement
 
+
 class CommentRequest(BaseModel):
     comment_text: str
+
 
 @router.post("/{id}/comments")
 def add_measurement_comment(
@@ -143,7 +144,6 @@ def add_measurement_comment(
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
-    print(user)
     new_comment = models.Comment(
         content=comment_request.comment_text,
         measurement_id=measurement.id,
@@ -164,6 +164,80 @@ def add_measurement_comment(
             "created_at": new_comment.created_at
         }
     }
+
+
+# Edit comment endpoint
+class CommentEditRequest(BaseModel):
+    content: str
+
+
+@router.patch("/{measurement_id}/comments/{comment_id}")
+def edit_measurement_comment(
+    measurement_id: str,
+    comment_id: int,
+    comment_data: CommentEditRequest,
+    db: Session = Depends(get_session_local),
+    user: models.User = Depends(get_current_user)
+):
+    measurement = db.query(models.Measurement).filter(models.Measurement.id == measurement_id).first()
+    if not measurement:
+        raise HTTPException(status_code=404, detail="Measurement not found")
+
+    comment = (
+        db.query(models.Comment)
+        .filter(
+            models.Comment.id == comment_id,
+            models.Comment.measurement_id == measurement_id,
+            models.Comment.user_id == user["id"]
+        )
+        .first()
+    )
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found or you do not have permission to edit it.")
+
+    comment.content = comment_data.content
+    db.commit()
+    db.refresh(comment)
+
+    return {
+        "message": "Comment updated successfully",
+        "comment": {
+            "id": comment.id,
+            "content": comment.content,
+            "user": comment.user,
+            "measurement_id": comment.measurement_id,
+            "created_at": comment.created_at
+        }
+    }
+
+
+# Delete comment endpoint
+@router.delete("/{measurement_id}/comments/{comment_id}")
+def delete_measurement_comment(
+    measurement_id: str,
+    comment_id: int,
+    db: Session = Depends(get_session_local),
+    user: models.User = Depends(get_current_user)
+):
+    measurement = db.query(models.Measurement).filter(models.Measurement.id == measurement_id).first()
+    if not measurement:
+        raise HTTPException(status_code=404, detail="Measurement not found")
+
+    comment = (
+        db.query(models.Comment)
+        .filter(
+            models.Comment.id == comment_id,
+            models.Comment.measurement_id == measurement_id,
+            models.Comment.user_id == user["id"]
+        )
+        .first()
+    )
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found or you do not have permission to delete it.")
+
+    db.delete(comment)
+    db.commit()
+    return
 
 
 @router.patch("/{id}/edit")
@@ -199,7 +273,6 @@ def edit_measurement(
 
 
 @router.post("/create_sample_measurements/")
-# @TODO remove this later
 def create_sample_measurements(
     db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
 ):
