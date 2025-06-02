@@ -130,7 +130,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
 
 
 class CommentRequest(BaseModel):
-    comment_text: str
+    content: str
 
 
 @router.post("/{id}/comments")
@@ -145,7 +145,7 @@ def add_measurement_comment(
         raise HTTPException(status_code=404, detail="Measurement not found")
 
     new_comment = models.Comment(
-        content=comment_request.comment_text,
+        content=comment_request.content,
         measurement_id=measurement.id,
         user_id=user["id"]
     )
