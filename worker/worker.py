@@ -45,9 +45,11 @@ def consume_messages():
 
 
 def save_data_to_db(json_data, agent_code):
-    session = next(get_session_local())
+    gen = get_session_local()
+    session = next(gen)
     title = json_data["file"]
     data = json_data["histogram"][0]
+    print(session)
     detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
     experiment = (
         session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
