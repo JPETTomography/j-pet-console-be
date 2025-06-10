@@ -14,6 +14,7 @@ from sqlalchemy.orm import relationship
 from database.database import Base
 from sqlalchemy.dialects.postgresql import JSONB
 from passlib.context import CryptContext
+import os
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -244,8 +245,36 @@ class Comment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
+    created_at = Column(
+        TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
+    )
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
     measurement = relationship("Measurement", back_populates="comments")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User")
+    comment_pictures = relationship(
+        "CommentPicture", back_populates="comment", cascade="all, delete-orphan"
+    )
+
+
+class CommentPicture(Base):
+    __tablename__ = "comment_pictures"
+
+    id = Column(Integer, primary_key=True, index=True)
+    path = Column(String, nullable=False)
+    created_at = Column(
+        TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
+    )
+    comment_id = Column(Integer, ForeignKey("comments.id"), nullable=False)
+    comment = relationship("Comment", back_populates="comment_pictures")
+
+
+@event.listens_for(CommentPicture, "after_delete")
+def delete_picture_file(mapper, connection, target):
+    if target.path:
+        file_path = target.path
+        if file_path.startswith("/static/"):
+            file_path = file_path.replace("/static/", "")
+        abs_path = os.path.join(os.getcwd(), file_path)
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
