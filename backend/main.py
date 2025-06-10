@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import database.models as models
@@ -98,6 +99,9 @@ admin.add_view(DataEntryAdmin)
 admin.add_view(MeteoReadoutAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
+
+PICTURES_DIR = "/static/pictures/"
+app.mount(PICTURES_DIR, StaticFiles(directory="pictures"), name="pictures")
 
 
 @app.post("/token")
