@@ -1,19 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+import os
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel, Field
+from typing import List, Optional
+from backend.routers.common import generate_models
 import database.models as models
 from database.database import get_session_local
 from backend.auth import get_current_user_with_role, Role, get_current_user
 from sqlalchemy import func
-from backend.utills.utills import get_random_user, get_random_tags, get_random_radioisotopes
+from backend.utills.utills import (
+    get_random_user,
+    get_random_tags,
+    get_random_radioisotopes,
+)
 import faker
 import random
+import uuid
+
+PICTURES_DIR = "pictures"
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-# Measurement base model
 class MeasurementBase(BaseModel):
     name: str = Field(..., example="Measurement Name")
     description: str = Field(..., example="A detailed description of the measurement")
@@ -24,7 +33,27 @@ class MeasurementBase(BaseModel):
     experiment_id: int = Field(..., example=1)
 
 
-# Generate fake data for testing
+class CommentPictureResponse(BaseModel):
+    id: int
+    path: str
+    comment_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class CommentResponse(BaseModel):
+    id: int
+    content: str
+    user: dict
+    measurement_id: int
+    created_at: str
+    pictures: List[CommentPictureResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
 def generate_fake_measurement(db: Session = None):
     all_experiments = db.query(models.Experiment.id).order_by(func.random())
     experiments_list = [exp.id for exp in all_experiments]
@@ -68,7 +97,6 @@ def generate_measurement(
     )
 
 
-# CRUD endpoints for measurements
 @router.get("/")
 def read_measurements(db: Session = Depends(get_session_local)):
     return db.query(models.Measurement).all()
@@ -119,40 +147,87 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
     comments = (
         db.query(models.Comment)
         .filter(models.Comment.measurement_id == id)
-        .options(joinedload(models.Comment.user))
+        .options(
+            joinedload(models.Comment.user),
+            joinedload(models.Comment.comment_pictures),
+        )
         .order_by(models.Comment.created_at.asc())
         .all()
     )
 
-    measurement.comments = comments
+    serialized_comments = []
+    for comment in comments:
+        serialized_comments.append(
+            {
+                "id": comment.id,
+                "content": comment.content,
+                "user": comment.user,
+                "measurement_id": comment.measurement_id,
+                "created_at": str(comment.created_at),
+                "pictures": [
+                    CommentPictureResponse.from_orm(pic)
+                    for pic in comment.comment_pictures
+                ],
+            }
+        )
 
-    return measurement
-
-
-class CommentRequest(BaseModel):
-    content: str
+    return {
+        "id": measurement.id,
+        "name": measurement.name,
+        "description": measurement.description,
+        "directory": measurement.directory,
+        "number_of_files": measurement.number_of_files,
+        "patient_reference": measurement.patient_reference,
+        "shifter_id": measurement.shifter_id,
+        "experiment_id": measurement.experiment_id,
+        "tags": measurement.tags,
+        "radioisotopes": measurement.radioisotopes,
+        "data_entry": measurement.data_entry,
+        "comments": serialized_comments,
+    }
 
 
 @router.post("/{id}/comments")
-def add_measurement_comment(
+async def add_measurement_comment(
     id: str,
-    comment_request: CommentRequest,
+    content: str = Form(...),
+    files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_session_local),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
 ):
-    measurement = db.query(models.Measurement).filter(models.Measurement.id == id).first()
+    measurement = (
+        db.query(models.Measurement).filter(models.Measurement.id == id).first()
+    )
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
     new_comment = models.Comment(
-        content=comment_request.content,
+        content=content,
         measurement_id=measurement.id,
-        user_id=user["id"]
+        user_id=user["id"],
     )
-
     db.add(new_comment)
     db.commit()
     db.refresh(new_comment)
+
+    os.makedirs(PICTURES_DIR, exist_ok=True)
+    if files:
+        for file in files:
+            if not file.content_type.startswith("image/"):
+                raise HTTPException(
+                    status_code=400, detail=f"File '{file.filename}' is not an image."
+                )
+            ext = os.path.splitext(file.filename)[1]
+            filename = f"{new_comment.id}_{uuid.uuid4().hex}{ext}"
+            file_path = os.path.join(PICTURES_DIR, filename)
+            with open(file_path, "wb") as f:
+                content_bytes = await file.read()
+                f.write(content_bytes)
+            picture_url = f"/static/pictures/{filename}"
+            picture = models.CommentPicture(path=picture_url, comment_id=new_comment.id)
+            db.add(picture)
+        db.commit()
+        db.refresh(new_comment)
 
     return {
         "message": "Comment added successfully",
@@ -161,25 +236,30 @@ def add_measurement_comment(
             "content": new_comment.content,
             "user": new_comment.user,
             "measurement_id": new_comment.measurement_id,
-            "created_at": new_comment.created_at
-        }
+            "created_at": str(new_comment.created_at),
+            "pictures": [
+                CommentPictureResponse.from_orm(pic)
+                for pic in new_comment.comment_pictures
+            ],
+        },
     }
 
 
-# Edit comment endpoint
-class CommentEditRequest(BaseModel):
-    content: str
-
-
 @router.patch("/{measurement_id}/comments/{comment_id}")
-def edit_measurement_comment(
+async def edit_measurement_comment(
     measurement_id: str,
     comment_id: int,
-    comment_data: CommentEditRequest,
+    content: str = Form(...),
+    files: Optional[List[UploadFile]] = File(None),
+    deleted_picture_ids: Optional[List[int]] = Form(None),
     db: Session = Depends(get_session_local),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
 ):
-    measurement = db.query(models.Measurement).filter(models.Measurement.id == measurement_id).first()
+    measurement = (
+        db.query(models.Measurement)
+        .filter(models.Measurement.id == measurement_id)
+        .first()
+    )
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
@@ -188,16 +268,53 @@ def edit_measurement_comment(
         .filter(
             models.Comment.id == comment_id,
             models.Comment.measurement_id == measurement_id,
-            models.Comment.user_id == user["id"]
+            models.Comment.user_id == user["id"],
         )
         .first()
     )
     if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found or you do not have permission to edit it.")
+        raise HTTPException(
+            status_code=404,
+            detail="Comment not found or you do not have permission to edit it.",
+        )
 
-    comment.content = comment_data.content
-    db.commit()
-    db.refresh(comment)
+    comment.content = content
+
+    if deleted_picture_ids:
+        # If only one id is sent, it comes as a string, not a list
+        if isinstance(deleted_picture_ids, str):
+            deleted_picture_ids = [deleted_picture_ids]
+        for pic_id in deleted_picture_ids:
+            pic = (
+                db.query(models.CommentPicture)
+                .filter(
+                    models.CommentPicture.id == int(pic_id),
+                    models.CommentPicture.comment_id == comment.id,
+                )
+                .first()
+            )
+            if pic:
+                db.delete(pic)
+        db.commit()
+
+    os.makedirs(PICTURES_DIR, exist_ok=True)
+    if files:
+        for file in files:
+            if not file.content_type.startswith("image/"):
+                raise HTTPException(
+                    status_code=400, detail=f"File '{file.filename}' is not an image."
+                )
+            ext = os.path.splitext(file.filename)[1]
+            filename = f"{comment.id}_{uuid.uuid4().hex}{ext}"
+            file_path = os.path.join(PICTURES_DIR, filename)
+            with open(file_path, "wb") as f:
+                content_bytes = await file.read()
+                f.write(content_bytes)
+            picture_url = f"/static/pictures/{filename}"
+            picture = models.CommentPicture(path=picture_url, comment_id=comment.id)
+            db.add(picture)
+        db.commit()
+        db.refresh(comment)
 
     return {
         "message": "Comment updated successfully",
@@ -206,20 +323,26 @@ def edit_measurement_comment(
             "content": comment.content,
             "user": comment.user,
             "measurement_id": comment.measurement_id,
-            "created_at": comment.created_at
-        }
+            "created_at": str(comment.created_at),
+            "pictures": [
+                CommentPictureResponse.from_orm(pic) for pic in comment.comment_pictures
+            ],
+        },
     }
 
 
-# Delete comment endpoint
 @router.delete("/{measurement_id}/comments/{comment_id}")
 def delete_measurement_comment(
     measurement_id: str,
     comment_id: int,
     db: Session = Depends(get_session_local),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
 ):
-    measurement = db.query(models.Measurement).filter(models.Measurement.id == measurement_id).first()
+    measurement = (
+        db.query(models.Measurement)
+        .filter(models.Measurement.id == measurement_id)
+        .first()
+    )
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
@@ -228,12 +351,15 @@ def delete_measurement_comment(
         .filter(
             models.Comment.id == comment_id,
             models.Comment.measurement_id == measurement_id,
-            models.Comment.user_id == user["id"]
+            models.Comment.user_id == user["id"],
         )
         .first()
     )
     if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found or you do not have permission to delete it.")
+        raise HTTPException(
+            status_code=404,
+            detail="Comment not found or you do not have permission to delete it.",
+        )
 
     db.delete(comment)
     db.commit()
