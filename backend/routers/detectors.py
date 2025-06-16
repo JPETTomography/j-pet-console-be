@@ -5,6 +5,8 @@ from backend.auth import get_current_user
 import database.models as models
 from database.database import get_session_local
 from backend.routers.common import generate_models
+import faker
+import random
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
@@ -51,6 +53,19 @@ def edit_detector(
         raise HTTPException(
             status_code=500, detail=f"Failed to update detector: {str(e)}"
         )
+
+generator = faker.Faker()
+def generate_fake_detector(db: Session=None):
+    i = 0
+    while True:
+        ending = i%10
+        yield dict(
+            name=generator.catch_phrase(),
+            description=generator.text(max_nb_chars=200),
+            status=random.choice(["online", "offline", "damaged", "in-repair", "commissioned", "decommissioned"]),
+            agent_code=f"550e8400-e29b-41d4-a716-44665544000{ending}"
+        )
+        i+=1
 
 
 @router.post("/create_sample_detectors/")
