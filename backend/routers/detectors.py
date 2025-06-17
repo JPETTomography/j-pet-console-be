@@ -68,6 +68,31 @@ def generate_fake_detector(db: Session=None):
         i+=1
 
 
+generator = faker.Faker()
+
+
+def generate_fake_detector(db: Session = None):
+    i = 0
+    while True:
+        ending = i % 10
+        yield dict(
+            name=generator.catch_phrase(),
+            description=generator.text(max_nb_chars=200),
+            status=random.choice(
+                [
+                    "online",
+                    "offline",
+                    "damaged",
+                    "in-repair",
+                    "commissioned",
+                    "decommissioned",
+                ]
+            ),
+            agent_code=f"550e8400-e29b-41d4-a716-44665544000{ending}",
+        )
+        i += 1
+
+
 @router.post("/create_sample_detectors/")
 def create_sample_detectors(
     db: Session = Depends(get_session_local), amount: int = 10, fake_data=None
