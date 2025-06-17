@@ -100,8 +100,8 @@ admin.add_view(MeteoReadoutAdmin)
 
 models.Base.metadata.create_all(bind=database.engine)
 
-PICTURES_DIR = "/static/pictures/"
-app.mount(PICTURES_DIR, StaticFiles(directory="pictures"), name="pictures")
+PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
+app.mount("/static/pictures/", StaticFiles(directory=PICTURES_DIR), name="pictures")
 
 
 @app.post("/token")
