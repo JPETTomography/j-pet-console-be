@@ -17,7 +17,7 @@ import faker
 import random
 import uuid
 
-PICTURES_DIR = "pictures"
+PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -208,26 +208,10 @@ async def add_measurement_comment(
     )
     db.add(new_comment)
     db.commit()
-    db.refresh(new_comment)
 
-    os.makedirs(PICTURES_DIR, exist_ok=True)
-    if files:
-        for file in files:
-            if not file.content_type.startswith("image/"):
-                raise HTTPException(
-                    status_code=400, detail=f"File '{file.filename}' is not an image."
-                )
-            ext = os.path.splitext(file.filename)[1]
-            filename = f"{new_comment.id}_{uuid.uuid4().hex}{ext}"
-            file_path = os.path.join(PICTURES_DIR, filename)
-            with open(file_path, "wb") as f:
-                content_bytes = await file.read()
-                f.write(content_bytes)
-            picture_url = f"/static/pictures/{filename}"
-            picture = models.CommentPicture(path=picture_url, comment_id=new_comment.id)
-            db.add(picture)
-        db.commit()
-        db.refresh(new_comment)
+    await save_comment_pictures(files, new_comment.id, db)
+
+    db.refresh(new_comment)
 
     return {
         "message": "Comment added successfully",
@@ -281,9 +265,6 @@ async def edit_measurement_comment(
     comment.content = content
 
     if deleted_picture_ids:
-        # If only one id is sent, it comes as a string, not a list
-        if isinstance(deleted_picture_ids, str):
-            deleted_picture_ids = [deleted_picture_ids]
         for pic_id in deleted_picture_ids:
             pic = (
                 db.query(models.CommentPicture)
@@ -297,24 +278,9 @@ async def edit_measurement_comment(
                 db.delete(pic)
         db.commit()
 
-    os.makedirs(PICTURES_DIR, exist_ok=True)
-    if files:
-        for file in files:
-            if not file.content_type.startswith("image/"):
-                raise HTTPException(
-                    status_code=400, detail=f"File '{file.filename}' is not an image."
-                )
-            ext = os.path.splitext(file.filename)[1]
-            filename = f"{comment.id}_{uuid.uuid4().hex}{ext}"
-            file_path = os.path.join(PICTURES_DIR, filename)
-            with open(file_path, "wb") as f:
-                content_bytes = await file.read()
-                f.write(content_bytes)
-            picture_url = f"/static/pictures/{filename}"
-            picture = models.CommentPicture(path=picture_url, comment_id=comment.id)
-            db.add(picture)
-        db.commit()
-        db.refresh(comment)
+    await save_comment_pictures(files, comment.id, db)
+
+    db.refresh(comment)
 
     return {
         "message": "Comment updated successfully",
@@ -329,6 +295,26 @@ async def edit_measurement_comment(
             ],
         },
     }
+
+
+async def save_comment_pictures(files, comment_id, db):
+    os.makedirs(PICTURES_DIR, exist_ok=True)
+    if files:
+        for file in files:
+            if not file.content_type.startswith("image/"):
+                raise HTTPException(
+                    status_code=400, detail=f"File '{file.filename}' is not an image."
+                )
+            ext = os.path.splitext(file.filename)[1]
+            filename = f"{comment_id}_{uuid.uuid4().hex}{ext}"
+            file_path = os.path.join(PICTURES_DIR, filename)
+            with open(file_path, "wb") as f:
+                content_bytes = await file.read()
+                f.write(content_bytes)
+            picture_url = f"/static/pictures/{filename}"
+            picture = models.CommentPicture(path=picture_url, comment_id=comment_id)
+            db.add(picture)
+        db.commit()
 
 
 @router.delete("/{measurement_id}/comments/{comment_id}")
