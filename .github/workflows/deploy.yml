@@ -28,6 +28,7 @@ jobs:
         run: |
           sudo openvpn --config openvpn-config.ovpn --daemon --log openvpn.log --writepid openvpn.pid &
           sleep 10
+          sudo chown $USER:$USER openvpn.log
           grep 'Initialization Sequence Completed' openvpn.log || (cat openvpn.log && exit 1)
       - name: Set up SSH tunnel
         run: |
