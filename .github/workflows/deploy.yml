@@ -60,3 +60,9 @@ jobs:
           else
             echo "No VPN PID found."
           fi
+      - name: Upload VPN log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vpn-log
+          path: openvpn.log
