@@ -60,6 +60,10 @@ jobs:
           else
             echo "No VPN PID found."
           fi
+      - name: Make VPN log accessible
+        if: always()
+        run: |
+          sudo chown $USER:$USER openvpn.log
       - name: Upload VPN log
         if: always()
         uses: actions/upload-artifact@v4
