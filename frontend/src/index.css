@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  @apply p-0 m-0 font-inter text-slate-800;
+}
+
+#root {
+  @apply flex flex-col min-h-screen;
+}
+
+h1 {
+  @apply m-0 text-4xl font-semibold;
+}
+
+h2 {
+  @apply m-0 text-xl font-medium;
+}
+
+a, button, label, input, select {
+  @apply transition-colors duration-300;
+}
+
+.link {
+  @apply flex justify-center items-center gap-3 max-w-max;
+}
+
+.link-primary {
+  @apply link font-semibold text-sky-700 hover:text-sky-900 hover:underline;
+}
+
+.btn {
+  @apply link px-5 py-3 rounded;
+}
+
+.btn-primary {
+  @apply btn text-white bg-sky-700 outline-none ring-sky-200
+  hover:bg-sky-600 focus-visible:ring-2 focus-visible:bg-sky-600
+  disabled:bg-slate-400 disabled:cursor-not-allowed;
+}
+
+.btn-primary-outline {
+  @apply btn text-sky-600 bg-white border border-sky-600 outline-none ring-sky-200
+  hover:text-white hover:bg-sky-600 focus-visible:ring-2
+  disabled:text-slate-400 disabled:bg-inherit disabled:border-slate-400 disabled:cursor-not-allowed;
+}
+
+.button-group {
+  @apply flex gap-4 items-center justify-end;
+}
+
+.button-group > .button-group {
+  @apply flex-1;
+}
+
+.group\/input:has([required]) label {
+  @apply after:content-['_*'];
+}
+
+select {
+  @apply appearance-none bg-no-repeat bg-center;
+  background-image: url('/public/icons/chevron-down.svg');
+  background-position: right 0.5rem center;
+}
+
+.loader {
+  @apply w-12 h-12 relative border-transparent border-4 rounded-full;
+  border-right-color: #bae6fd;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.markdown-content, .editor-preview {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.markdown-content table, .editor-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.markdown-content th, .editor-preview th,
+.markdown-content td, .editor-preview td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-content th, .editor-preview th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.markdown-content ul, .editor-preview ul,
+.markdown-content ol, .editor-preview ol {
+  list-style-type: disc;
+  padding-left: 2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content ul, .editor-preview ul {
+  list-style-type: disc;
+}
+
+.markdown-content ol, .editor-preview ol {
+  list-style-type: decimal;
+}
+
+.markdown-content li, .editor-preview li {
+  margin-bottom: 0.25rem;
+}
+
+@media screen and (max-width: 600px) {
+  .markdown-content th, .editor-preview th,
+  .markdown-content td, .editor-preview td {
+    padding: 0.25rem;
+  }
+}

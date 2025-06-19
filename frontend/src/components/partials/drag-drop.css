@@ -1,0 +1,123 @@
+/* drag-drop.css */
+
+.drag-drop {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.document-uploader {
+  position: relative;
+  border: 2px dashed #1e90ff;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: border-color 0.3s ease;
+  padding: 16px;
+}
+
+.document-uploader.active {
+  border-color: #6dc24b;
+}
+
+.upload-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #555;
+  text-align: center;
+}
+
+.upload-text-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-text-container-drop-here-or {
+    margin-right: 4px;
+}
+
+.upload-info svg {
+  font-size: 32px;
+  color: #1e90ff;
+  margin-bottom: 8px;
+}
+
+.upload-info p {
+  font-size: 14px;
+  color: #333;
+}
+
+.browse-btn {
+  display: inline-block;
+  color: #1e90ff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+}
+
+.file-list {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.file-list__container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.file-item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.file-info img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-info p {
+  display: none; /* Hide file name to match the look */
+}
+
+.file-actions {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #fff;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.file-actions svg {
+  font-size: 14px;
+  color: #ff4d4f;
+}
+
+.success-file {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6dc24b;
+}
