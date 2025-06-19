@@ -1,0 +1,123 @@
+.comment-item {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+    border: 1px solid #cbd5e1; /* slate-200 */
+    position: relative;
+  }
+  
+  .comment-avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background-color: #0ea5e9; /* sky-500 */
+    color: white;
+    font-weight: 700;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .comment-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .comment-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .comment-author {
+    font-weight: 600;
+    color: #1e293b; /* slate-800 */
+  }
+  
+  .comment-date {
+    font-size: 0.75rem;
+    color: #64748b; /* slate-500 */
+  }
+  
+  .markdown-content {
+    margin-top: 4px;
+    color: #374151; /* slate-700 */
+    font-size: 0.875rem;
+  }
+  
+  /* Markdown lists */
+  .markdown-content ul {
+    list-style-type: disc;
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+  }
+  
+  .markdown-content ol {
+    list-style-type: decimal;
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+  }
+  
+  .markdown-content li {
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Menu styles */
+  .comment-menu-wrapper {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+  
+  .comment-menu-icon {
+    cursor: pointer;
+    color: #64748b; /* slate-500 */
+    font-size: 1.25rem;
+  }
+  
+  .comment-menu-dropdown {
+    position: absolute;
+    top: 24px;
+    right: 0;
+    background: white;
+    border: 1px solid #cbd5e1; /* slate-300 */
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+    z-index: 10;
+  }
+  
+  .comment-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    color: #334155; /* slate-700 */
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .comment-menu-btn:hover {
+    background-color: #f1f5f9; /* slate-100 */
+  }
+  
+  .edit-btn {
+    color: #334155; /* slate-700 */
+  }
+  
+  .delete-btn {
+    color: #ef4444; /* red-500 */
+  }
+  
+  .delete-btn:hover {
+    background-color: #fef2f2; /* red-100 */
+  }
+  
