@@ -49,7 +49,7 @@ jobs:
         run: |
           git submodule init
           git submodule update --remote --recursive
-          cd j-pet-console-fe
+          cd frontend
           echo "${{ secrets.DEPLOY_VARIABLES }}" > custom.env
           docker-compose --env-file custom.env -f docker-compose.yml down
           docker-compose --env-file custom.env -f docker-compose.yml up -d --build
