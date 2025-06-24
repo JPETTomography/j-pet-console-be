@@ -1,0 +1,20 @@
+{
+  "short_name": "J-PET",
+  "name": "J-PET Console",
+  "icons": [
+    {
+      "src": "images/logos/logo.png",
+      "type": "image/png",
+      "sizes": "275x274"
+    },
+    {
+      "src": "images/logos/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "275x274"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

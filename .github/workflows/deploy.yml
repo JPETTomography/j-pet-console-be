@@ -24,12 +24,12 @@ jobs:
         env:
           OPENVPN_CONFIG: ${{ vars.OPENVPN_CONFIG }}
 
-      - name: Connect to VPN
-        uses: "kota65535/github-openvpn-connect-action@v2"
-        with:
-          config_file: openvpn-config.ovpn
-          client_key: ${{ secrets.OPENVPN_KEY }}
-
+      - name: Start VPN
+        run: |
+          sudo openvpn --config openvpn-config.ovpn --daemon --log openvpn.log --writepid openvpn.pid &
+          sleep 10
+          sudo chown $USER:$USER openvpn.log
+          grep 'Initialization Sequence Completed' openvpn.log || (cat openvpn.log && exit 1)
       - name: Set up SSH tunnel
         run: |
           mkdir ~/.ssh
@@ -53,3 +53,22 @@ jobs:
           docker-compose --env-file custom.env -f docker-compose.yaml down
           docker-compose --env-file custom.env -f docker-compose.yaml up -d --build
 
+      - name: Disconnect VPN
+        if: always()
+        run: |
+          if [ -f openvpn.pid ]; then
+            sudo kill -SIGTERM $(cat openvpn.pid)
+            echo "VPN disconnected."
+          else
+            echo "No VPN PID found."
+          fi
+      - name: Make VPN log accessible
+        if: always()
+        run: |
+          sudo chown $USER:$USER openvpn.log
+      - name: Upload VPN log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vpn-log
+          path: openvpn.log
