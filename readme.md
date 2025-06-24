@@ -1,5 +1,26 @@
-# How to run this stuff
+# Deployment on jpet servers
 
+## Agent
+
+First setup the vpn to be able to access project,
+Need to connect to server (currently jpet3 aka. x.x.x.220).
+Ther should already be a tmux session running.
+Inside the tmux session there should be an opened folder `~/repos/agent`.
+It already has `config.yaml` and `docker-compose.depl.yml` which set correct paths.
+The `~/rootfiles` should contain the actual data taken by the machine, the agent is setup so that it will monitor that folder, and upon encountering the change it will process the new file and send it to worker.
+
+## Backend
+
+Go to github -> actions -> backend, click "run workflow", select the branch you want to deploy.
+
+## Frontend
+
+Go to github -> actions -> frontend, click "run workflow", select the branch you want to deploy.
+
+
+# Developement Setup
+
+## Agent
 go to `common/data_helpers` and get the data first
 
 
@@ -7,13 +28,31 @@ go to `common/data_helpers` and get the data first
 ./download_data.sh
 ```
 
-will download all the needed examplary data to the examplary_data folder.
+It will download all the needed examplary data to the examplary_data folder.
+
+Then **inside the ``agent/`` folder**, create a config file:
+
+```
+cp examplary_config.yaml config.yaml
+```
+
+Edit config.yaml as necessesary, then do:
+
+```
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
+```
+
+This should start agent.
+
+## Backend and worker
 
 For developement purposes, with volumes mounted up simply run
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.agent.yaml -f docker-compose.local.yaml up --build
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
 ```
+
+The `docker-compose.local.yaml` adds local files as volumes to sync without rebuilding.
 
 For deployment purposes run:
 
@@ -24,21 +63,12 @@ docker compose -f docker-compose.yaml up --build
 then see `localhost:8000/docs`
 to run full process of running agent, reading data from root, sending it to worker by json and then worker sending it to database use `/send_agent/` method
 
+## Frontend
 
-if the services did not stand up try calling them in this order
-
-```
-docker compose up web -d
-docker compose up agent -d
-docker compose up worker -d
-```
-
-or better yet, open each one in separate terminal
+Inside the `frontend/` folder:
 
 ```
-docker compose up web
-docker compose up agent
-docker compose up worker
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
 ```
 
 # Demo step by step
