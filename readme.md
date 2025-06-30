@@ -39,7 +39,7 @@ cp examplary_config.yaml config.yaml
 Edit config.yaml as necessesary, then do:
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 
 This should start agent.
@@ -68,7 +68,7 @@ to run full process of running agent, reading data from root, sending it to work
 Inside the `frontend/` folder:
 
 ```
-docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 
 # Demo step by step
