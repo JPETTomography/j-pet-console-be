@@ -37,6 +37,9 @@ const ExperimentForm = (props) => {
   const [detectorId, setDetectorId] = useState(
     experiment ? experiment.detector_id : ""
   );
+  const [referenceFile, setReferenceFile] = useState(null);
+  const [uploadingReference, setUploadingReference] = useState(false);
+  const [referenceUploadSuccess, setReferenceUploadSuccess] = useState(false);
 
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
@@ -193,6 +196,40 @@ const ExperimentForm = (props) => {
     }
   };
 
+  const handleReferenceUpload = async () => {
+    if (!referenceFile || !experiment) return;
+
+    setUploadingReference(true);
+    setReferenceUploadSuccess(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", referenceFile);
+
+      const response = await api.post(
+        `/experiments/${experiment.id}/upload-reference-data`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setReferenceUploadSuccess(true);
+        setReferenceFile(null);
+        // Clear file input
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = "";
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to upload reference data");
+    } finally {
+      setUploadingReference(false);
+    }
+  };
+
   return (
     <Form onSubmit={handleSubmit}>
       {error && <ErrorCard>{error}</ErrorCard>}
@@ -264,6 +301,53 @@ const ExperimentForm = (props) => {
         })}
         required
       />
+      
+      {/* Reference Data Upload Section - Only show for existing experiments */}
+      {experiment && (
+        <div className="reference-data-section border-t pt-6 mt-6">
+          <h3 className="text-lg font-semibold mb-4">Reference Data</h3>
+          
+          {referenceUploadSuccess && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+              ✓ Reference data uploaded successfully!
+            </div>
+          )}
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Reference Plots JSON File
+            </label>
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setReferenceFile(e.target.files[0])}
+              className="block w-full text-sm text-gray-500
+                         file:mr-4 file:py-2 file:px-4
+                         file:rounded-full file:border-0
+                         file:text-sm file:font-semibold
+                         file:bg-blue-50 file:text-blue-700
+                         hover:file:bg-blue-100"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Upload a JSON file containing reference plot data. This will be used to compare with measurement histograms.
+            </p>
+          </div>
+          
+          {referenceFile && (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={handleReferenceUpload}
+                disabled={uploadingReference}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {uploadingReference ? 'Uploading...' : 'Upload Reference Data'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      
       <ButtonGroup>
         <a href={experiment ? `/experiments/${experiment.id}` : "/experiments"}>
           Cancel

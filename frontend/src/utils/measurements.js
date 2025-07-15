@@ -26,8 +26,12 @@ export const measurementTabs = [
   },
 ];
 
-export const measurementContextContent = (context, measurement, setMeasurement) => {
+export const measurementContextContent = (context, measurement, setMeasurement, referenceData = null) => {
   const Content = contentMap[context];
+t
+  if (context === 'histograms') {
+    return <Content measurement={measurement} setMeasurement={setMeasurement} referenceData={referenceData} />;
+  }
 
   return <Content measurement={measurement} setMeasurement={setMeasurement} />;
 };

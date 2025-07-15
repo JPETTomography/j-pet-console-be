@@ -48,7 +48,8 @@ def save_data_to_db(json_data, agent_code):
     gen = get_session_local()
     session = next(gen)
     title = json_data["file"]
-    data = json_data["histogram"][0]
+    histograms = json_data["histogram"]
+    histo_dir = histograms[0]["histo_dir"] if histograms else "unknown"
     print(session)
     detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
     experiment = (
@@ -63,17 +64,16 @@ def save_data_to_db(json_data, agent_code):
     )
 
     try:
-        # @TODO cover the agent_code field
+        # Store the entire histogram list as one data entry
         new_data_entry = DataEntry(
-            data=data,
-            name="unnamed_entry",
-            histo_type=data["histo_type"],
-            histo_dir=data["histo_dir"],
+            data=histograms,  # The entire list of histograms
+            name=f"data_from_{title}",
+            histo_dir=histo_dir,  # Directory from first histogram
             measurement_id=measurement.id,
         )
         session.add(new_data_entry)
         session.commit()
-        print(f"Inserted data entry with title '{title}'")
+        print(f"Inserted data entry with {len(histograms)} histograms from file '{title}'")
     except Exception as e:
         session.rollback()
         print(f"Failed to insert data entry: {e}")

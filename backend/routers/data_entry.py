@@ -16,7 +16,6 @@ def generate_fake_data_entry(db: Session = None):
     while True:
         yield dict(
             name=generator.catch_phrase(),
-            histo_type=random.choice(["TH2D", "TH1D"]),
             histo_dir="/".join(
                 [generator.catch_phrase().partition(" ")[0] for _ in range(2)]
             ),

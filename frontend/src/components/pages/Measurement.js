@@ -25,6 +25,7 @@ const Measurement = () => {
   const { measurement_id } = useParams();
 
   const [measurement, setMeasurement] = useState({});
+  const [referenceData, setReferenceData] = useState(null);
   const [context, setContext] = useState(measurementTabs[0].id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,6 +37,17 @@ const Measurement = () => {
     try {
       const response = await api.get(`/measurements/${measurement_id}`);
       setMeasurement(response.data);
+      
+      if (response.data.experiment_id) {
+        try {
+          const refResponse = await api.get(`/experiments/${response.data.experiment_id}/reference-data`);
+          console.log('Reference data fetched:', refResponse.data);
+          setReferenceData(refResponse.data.reference_data);
+        } catch (refError) {
+          console.log('No reference data available for this experiment');
+          setReferenceData(null);
+        }
+      }
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/");
@@ -70,7 +82,7 @@ const Measurement = () => {
                 active={context}
                 changeContext={setContext}
               />
-              {measurementContextContent(context, measurement, setMeasurement)}
+              {measurementContextContent(context, measurement, setMeasurement, referenceData)}
             </div>
             <div className="flex flex-col gap-6">
               <ul className="list-none empty:hidden flex flex-wrap gap-4">

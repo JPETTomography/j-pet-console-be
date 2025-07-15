@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from typing import Optional
 from sqlalchemy.orm import Session, selectinload, joinedload
 from pydantic import BaseModel, Field
@@ -10,6 +10,7 @@ from backend.routers.common import generate_models
 import random
 import faker
 from datetime import timedelta, datetime
+import json
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -24,6 +25,10 @@ class ExperimentBase(BaseModel):
     end_date: Optional[datetime] = Field(None, example="2023-01-31T00:00:00")
     coordinator_id: int = Field(..., example=1)
     detector_id: int = Field(..., example=1)
+
+
+class ExperimentWithReference(ExperimentBase):
+    reference_data: Optional[dict] = Field(None, example={"reference_plots": []})
 
 
 def generate_fake_experiment(db: Session = None):
@@ -59,6 +64,7 @@ def generate_experiment(
     detector_id: int,
     start_date: datetime,
     end_date: Optional[datetime] = None,
+    reference_data: Optional[dict] = None,
 ):
     return models.Experiment(
         name=name,
@@ -69,6 +75,7 @@ def generate_experiment(
         end_date=end_date,
         coordinator_id=coordinator_id,
         detector_id=detector_id,
+        reference_data=reference_data,
     )
 
 
@@ -126,7 +133,7 @@ def read_experiment(id: str, db: Session = Depends(get_session_local)):
 @router.patch("/{id}/edit")
 def edit_experiment(
     id: str,
-    experiment_data: ExperimentBase,
+    experiment_data: ExperimentWithReference,
     db: Session = Depends(get_session_local),
     _=Depends(get_current_user_with_role(Role.COORDINATOR)),
 ):
@@ -146,6 +153,7 @@ def edit_experiment(
         experiment.end_date = experiment_data.end_date
         experiment.coordinator_id = experiment_data.coordinator_id
         experiment.detector_id = experiment_data.detector_id
+        experiment.reference_data = experiment_data.reference_data
 
         db.commit()
         db.refresh(experiment)
@@ -197,3 +205,78 @@ def create_sample_experiments(
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create experiments")
     return {"message": "Sample experiments created"}
+
+
+@router.post("/{id}/upload-reference-data")
+async def upload_reference_data(
+    id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_session_local),
+    _=Depends(get_current_user_with_role(Role.COORDINATOR)),
+):
+    try:
+        experiment = (
+            db.query(models.Experiment).filter(models.Experiment.id == id).first()
+        )
+        if not experiment:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+
+        if not file.filename.endswith('.json'):
+            raise HTTPException(
+                status_code=400, 
+                detail="File must be a JSON file"
+            )
+
+        content = await file.read()
+        try:
+            reference_data = json.loads(content.decode('utf-8'))
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid JSON format"
+            )
+
+        if not isinstance(reference_data, dict):
+            raise HTTPException(
+                status_code=400,
+                detail="Reference data must be a JSON object"
+            )
+            
+            
+        print(reference_data)
+
+        experiment.reference_data = reference_data
+        db.commit()
+        db.refresh(experiment)
+
+        return {
+            "message": "Reference data uploaded successfully",
+            "filename": file.filename,
+            "data_keys": list(reference_data.keys()) if isinstance(reference_data, dict) else []
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to upload reference data: {str(e)}"
+        )
+
+
+@router.get("/{id}/reference-data")
+def get_reference_data(
+    id: str,
+    db: Session = Depends(get_session_local)
+):
+    experiment = (
+        db.query(models.Experiment).filter(models.Experiment.id == id).first()
+    )
+    if not experiment:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    
+    return {
+        "experiment_id": experiment.id,
+        "reference_data": experiment.reference_data
+    }
