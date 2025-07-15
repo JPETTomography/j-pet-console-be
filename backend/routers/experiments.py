@@ -221,29 +221,19 @@ async def upload_reference_data(
         if not experiment:
             raise HTTPException(status_code=404, detail="Experiment not found")
 
-        if not file.filename.endswith('.json'):
-            raise HTTPException(
-                status_code=400, 
-                detail="File must be a JSON file"
-            )
+        if not file.filename.endswith(".json"):
+            raise HTTPException(status_code=400, detail="File must be a JSON file")
 
         content = await file.read()
         try:
-            reference_data = json.loads(content.decode('utf-8'))
+            reference_data = json.loads(content.decode("utf-8"))
         except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=400, 
-                detail="Invalid JSON format"
-            )
+            raise HTTPException(status_code=400, detail="Invalid JSON format")
 
         if not isinstance(reference_data, dict):
             raise HTTPException(
-                status_code=400,
-                detail="Reference data must be a JSON object"
+                status_code=400, detail="Reference data must be a JSON object"
             )
-            
-            
-        print(reference_data)
 
         experiment.reference_data = reference_data
         db.commit()
@@ -252,7 +242,9 @@ async def upload_reference_data(
         return {
             "message": "Reference data uploaded successfully",
             "filename": file.filename,
-            "data_keys": list(reference_data.keys()) if isinstance(reference_data, dict) else []
+            "data_keys": (
+                list(reference_data.keys()) if isinstance(reference_data, dict) else []
+            ),
         }
 
     except HTTPException:
@@ -260,23 +252,14 @@ async def upload_reference_data(
     except Exception as e:
         db.rollback()
         raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to upload reference data: {str(e)}"
+            status_code=500, detail=f"Failed to upload reference data: {str(e)}"
         )
 
 
 @router.get("/{id}/reference-data")
-def get_reference_data(
-    id: str,
-    db: Session = Depends(get_session_local)
-):
-    experiment = (
-        db.query(models.Experiment).filter(models.Experiment.id == id).first()
-    )
+def get_reference_data(id: str, db: Session = Depends(get_session_local)):
+    experiment = db.query(models.Experiment).filter(models.Experiment.id == id).first()
     if not experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
-    
-    return {
-        "experiment_id": experiment.id,
-        "reference_data": experiment.reference_data
-    }
+
+    return {"experiment_id": experiment.id, "reference_data": experiment.reference_data}
