@@ -45,6 +45,9 @@ class User(Base):
     def hash_password(self):
         self.password = pwd_context.hash(self.password)
 
+    def __str__(self):
+        return f"<User id={self.id} name={self.name} email={self.email}>"
+
 
 @event.listens_for(User, "before_insert")
 def hash_password_before_insert(_mapper, connection, target):
@@ -71,6 +74,9 @@ class Detector(Base):
     )
     experiments = relationship("Experiment", back_populates="detector")
 
+    def __str__(self):
+        return f"<Detector id={self.id} name={self.name}>"
+
 
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -96,6 +102,10 @@ class Experiment(Base):
     detector_id = Column(Integer, ForeignKey("detectors.id"), nullable=False)
     detector = relationship("Detector", back_populates="experiments")
     measurements = relationship("Measurement", back_populates="experiment")
+    reference_data = Column(JSONB)
+
+    def __str__(self):
+        return f"<Experiment id={self.id} name={self.name}>"
 
 
 class TagMeasurement(Base):
@@ -105,6 +115,9 @@ class TagMeasurement(Base):
     tag_id = Column(Integer, ForeignKey("tags.id"), nullable=False)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
 
+    def __str__(self):
+        return f"<TagMeasurement id={self.id} tag_id={self.tag_id} measurement_id={self.measurement_id}>"
+
 
 class RadioisotopeMeasurement(Base):
     __tablename__ = "radioisotope_measurement"
@@ -112,6 +125,9 @@ class RadioisotopeMeasurement(Base):
     id = Column(Integer, primary_key=True, index=True)
     radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+
+    def __str__(self):
+        return f"<RadioisotopeMeasurement id={self.id} radioisotope_id={self.radioisotope_id} measurement_id={self.measurement_id}>"
 
 
 class Tag(Base):
@@ -133,6 +149,9 @@ class Tag(Base):
     measurements = relationship(
         "Measurement", secondary="tag_measurement", back_populates="tags"
     )
+
+    def __str__(self):
+        return f"<Tag id={self.id} name={self.name}>"
 
 
 class Radioisotope(Base):
@@ -157,6 +176,9 @@ class Radioisotope(Base):
         secondary="radioisotope_measurement",
         back_populates="radioisotopes",
     )
+
+    def __str__(self):
+        return f"<Radioisotope id={self.id} name={self.name}>"
 
 
 class Measurement(Base):
@@ -193,25 +215,23 @@ class Measurement(Base):
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
     comments = relationship("Comment", back_populates="measurement")
 
+    def __str__(self):
+        return f"<Measurement id={self.id} name={self.name}>"
+
 
 class DataEntry(Base):
     __tablename__ = "data_entry"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    histo_type = Column(String, nullable=False)
     histo_dir = Column(String, nullable=False)
-    # THIS WILL BE PROVIDED IN data column
-    # daq_time = Column(TIMESTAMP(timezone=True), nullable=False)
-    # agent_time = Column(TIMESTAMP(timezone=True), nullable=False)
-    # reco_finish = Column(TIMESTAMP(timezone=True), nullable=False)
-    # observable_evt_num = Column(Integer, nullable=False)
-    # is_correct = Column(Boolean, default=False)
+    acquisition_date = Column(TIMESTAMP(timezone=True), nullable=True)
     data = Column(JSONB)
-    # created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
-    # updated_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
     measurement = relationship("Measurement", back_populates="data_entry")
+
+    def __str__(self):
+        return f"<DataEntry id={self.id} name={self.name}>"
 
 
 class MeteoReadout(Base):
@@ -239,6 +259,9 @@ class MeteoReadout(Base):
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
     measurement = relationship("Measurement", back_populates="meteo_readouts")
 
+    def __str__(self):
+        return f"<MeteoReadout id={self.id} measurement_id={self.measurement_id}>"
+
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -256,6 +279,9 @@ class Comment(Base):
         "CommentPicture", back_populates="comment", cascade="all, delete-orphan"
     )
 
+    def __str__(self):
+        return f"<Comment id={self.id} measurement_id={self.measurement_id} user_id={self.user_id}>"
+
 
 class CommentPicture(Base):
     __tablename__ = "comment_pictures"
@@ -267,6 +293,9 @@ class CommentPicture(Base):
     )
     comment_id = Column(Integer, ForeignKey("comments.id"), nullable=False)
     comment = relationship("Comment", back_populates="comment_pictures")
+
+    def __str__(self):
+        return f"<CommentPicture id={self.id} path={self.path}>"
 
 
 @event.listens_for(CommentPicture, "after_delete")
