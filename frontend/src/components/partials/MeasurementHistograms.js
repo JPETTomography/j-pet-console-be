@@ -61,7 +61,47 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
 
     if (!referenceHistograms || !Array.isArray(referenceHistograms)) return null
 
-    return referenceHistograms[histogramIndex] || null
+    const refData = referenceHistograms[histogramIndex] || null
+    
+    if (refData) {
+      return normalizeHistogramData(refData)
+    }
+    
+    return refData
+  }
+
+  const normalizeHistogramData = (histogram) => {
+    if (!histogram) return histogram
+    
+    const normalized = { ...histogram }
+    
+    if (normalized.content && Array.isArray(normalized.content) && normalized.content.length > 0) {
+      let maxValue = 0
+      
+      for (let i = 0; i < normalized.content.length; i++) {
+        if (Array.isArray(normalized.content[i])) {
+          for (let j = 0; j < normalized.content[i].length; j++) {
+            const val = normalized.content[i][j]
+            if (val != null && !isNaN(val) && val > maxValue) {
+              maxValue = val
+            }
+          }
+        }
+      }
+      
+      if (maxValue > 0) {
+        normalized.content = normalized.content.map(row => 
+          Array.isArray(row) ? row.map(val => (val || 0) / maxValue) : row
+        )
+      }
+    } else if (normalized.y && Array.isArray(normalized.y) && normalized.y.length > 0) {
+      const maxValue = Math.max(...normalized.y.filter(val => val != null && !isNaN(val)))
+      if (maxValue > 0) {
+        normalized.y = normalized.y.map(val => (val || 0) / maxValue)
+      }
+    }
+    
+    return normalized
   }
 
   const aggregateLocalData = (measurement) => {
@@ -70,11 +110,23 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
     }
 
     if (measurement.data_entry.length === 1) {
+      const singleEntry = measurement.data_entry[0]
+      const normalizedHistograms = []
+      
+      if (singleEntry.data && Array.isArray(singleEntry.data)) {
+        for (let histIndex = 0; histIndex < singleEntry.data.length; histIndex++) {
+          const histogram = singleEntry.data[histIndex]
+          const normalizedHist = normalizeHistogramData(histogram)
+          normalizedHistograms.push(normalizedHist)
+        }
+      }
+      
       return {
         data_entry: [
           {
-            ...measurement.data_entry[0],
-            name: `${measurement.data_entry[0].name} (1 data entry)`
+            ...singleEntry,
+            name: `${singleEntry.name} (1 data entry, normalized)`,
+            data: normalizedHistograms
           }
         ],
         total_entries_aggregated: 1
@@ -89,30 +141,10 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
         const firstHist = firstEntry.data[histIndex]
         const aggregatedHist = { ...firstHist }
 
-        if (aggregatedHist.y && Array.isArray(aggregatedHist.y)) {
-          const aggregatedY = [...aggregatedHist.y]
-
-          for (
-            let entryIndex = 1;
-            entryIndex < measurement.data_entry.length;
-            entryIndex++
-          ) {
-            const entry = measurement.data_entry[entryIndex]
-            if (
-              entry.data &&
-              entry.data[histIndex] &&
-              entry.data[histIndex].y
-            ) {
-              for (let i = 0; i < aggregatedY.length; i++) {
-                aggregatedY[i] += entry.data[histIndex].y[i] || 0
-              }
-            }
-          }
-          const numEntries = measurement.data_entry.length
-          aggregatedHist.y = aggregatedY.map((val) => val / numEntries)
-        }
-
+        // For 2D histograms (heatmaps), only normalize 'content', not 'y'
+        // For 1D histograms, only normalize 'y'
         if (aggregatedHist.content && Array.isArray(aggregatedHist.content)) {
+          // This is a 2D histogram - sum and normalize content only
           const aggregatedContent = aggregatedHist.content.map((row) => [
             ...row
           ])
@@ -136,10 +168,50 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
               }
             }
           }
-          const numEntries = measurement.data_entry.length
-          aggregatedHist.content = aggregatedContent.map((row) =>
-            row.map((val) => val / numEntries)
-          )
+          let maxValue = 0
+          for (let i = 0; i < aggregatedContent.length; i++) {
+            for (let j = 0; j < aggregatedContent[i].length; j++) {
+              const val = aggregatedContent[i][j]
+              if (val != null && !isNaN(val) && val > maxValue) {
+                maxValue = val
+              }
+            }
+          }
+          
+          if (maxValue > 0) {
+            aggregatedHist.content = aggregatedContent.map((row) =>
+              row.map((val) => (val || 0) / maxValue)
+            )
+          } else {
+            aggregatedHist.content = aggregatedContent
+          }
+          
+        } else if (aggregatedHist.y && Array.isArray(aggregatedHist.y)) {
+
+          const aggregatedY = [...aggregatedHist.y]
+
+          for (
+            let entryIndex = 1;
+            entryIndex < measurement.data_entry.length;
+            entryIndex++
+          ) {
+            const entry = measurement.data_entry[entryIndex]
+            if (
+              entry.data &&
+              entry.data[histIndex] &&
+              entry.data[histIndex].y
+            ) {
+              for (let i = 0; i < aggregatedY.length; i++) {
+                aggregatedY[i] += entry.data[histIndex].y[i] || 0
+              }
+            }
+          }
+          const maxValue = Math.max(...aggregatedY.filter(val => val != null && !isNaN(val)))
+          if (maxValue > 0) {
+            aggregatedHist.y = aggregatedY.map(val => (val || 0) / maxValue)
+          } else {
+            aggregatedHist.y = aggregatedY
+          }
         }
 
         if (aggregatedHist.name || aggregatedHist.Title) {
@@ -169,7 +241,15 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
 
   const getDisplayData = () => {
     if (filteredData) {
-      return filteredData
+      // Backend returns aggregated but not normalized data, so we need to normalize it
+      const normalizedFilteredData = {
+        ...filteredData,
+        data_entry: filteredData.data_entry.map(entry => ({
+          ...entry,
+          data: entry.data ? entry.data.map(hist => normalizeHistogramData(hist)) : []
+        }))
+      }
+      return normalizedFilteredData
     }
     return aggregateLocalData(measurement)
   }
