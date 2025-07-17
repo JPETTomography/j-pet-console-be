@@ -1,67 +1,69 @@
-import { React, useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
+import { React, useState, useCallback, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 
-import Svg from "../partials/Svg";
+import Svg from "../partials/Svg"
 
-import Page from "../partials/Page";
+import Page from "../partials/Page"
 import {
   measurementTabs,
-  measurementContextContent,
-} from "../../utils/measurements";
-import Tabs from "../partials/Tabs";
-import Tag from "../partials/Tag";
-import ButtonGroup from "../partials/ButtonGroup";
-import ButtonBack from "../partials/ButtonBack";
-import ButtonEdit from "../partials/ButtonEdit";
+  measurementContextContent
+} from "../../utils/measurements"
+import Tabs from "../partials/Tabs"
+import Tag from "../partials/Tag"
+import ButtonGroup from "../partials/ButtonGroup"
+import ButtonBack from "../partials/ButtonBack"
+import ButtonEdit from "../partials/ButtonEdit"
 
-import FetchLoading from "../partials/FetchLoading";
-import FetchError from "../partials/FetchError";
-import api from "../../api";
+import FetchLoading from "../partials/FetchLoading"
+import FetchError from "../partials/FetchError"
+import api from "../../api"
 
 const Measurement = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const { measurement_id } = useParams();
+  const { measurement_id } = useParams()
 
-  const [measurement, setMeasurement] = useState({});
-  const [referenceData, setReferenceData] = useState(null);
-  const [context, setContext] = useState(measurementTabs[0].id);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [measurement, setMeasurement] = useState({})
+  const [referenceData, setReferenceData] = useState(null)
+  const [context, setContext] = useState(measurementTabs[0].id)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const fetchMeasurement = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      const response = await api.get(`/measurements/${measurement_id}`);
-      setMeasurement(response.data);
-      
+      const response = await api.get(`/measurements/${measurement_id}`)
+      setMeasurement(response.data)
+
       if (response.data.experiment_id) {
         try {
-          const refResponse = await api.get(`/experiments/${response.data.experiment_id}/reference-data`);
-          console.log('Reference data fetched:', refResponse.data);
-          setReferenceData(refResponse.data.reference_data);
+          const refResponse = await api.get(
+            `/experiments/${response.data.experiment_id}/reference-data`
+          )
+          console.log("Reference data fetched:", refResponse.data)
+          setReferenceData(refResponse.data.reference_data)
         } catch (refError) {
-          console.log('No reference data available for this experiment');
-          setReferenceData(null);
+          console.log("No reference data available for this experiment")
+          setReferenceData(null)
         }
       }
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate("/");
+        navigate("/")
       } else {
-        setError(err.message);
+        setError(err.message)
       }
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [measurement_id, navigate]);
+  }, [measurement_id, navigate])
 
   useEffect(() => {
-    fetchMeasurement();
-  }, [fetchMeasurement, measurement_id]);
+    fetchMeasurement()
+  }, [fetchMeasurement, measurement_id])
 
   return (
     <Page>
@@ -74,52 +76,65 @@ const Measurement = () => {
         <FetchError error={error} fetchFun={fetchMeasurement} />
       ) : (
         <>
-          <div className="grid grid-cols-[1fr_400px] gap-8">
-            <div className="flex-1 flex flex-col gap-8">
-              <h1>{measurement.name}</h1>
-              <Tabs
-                tabs={measurementTabs}
-                active={context}
-                changeContext={setContext}
-              />
-              {measurementContextContent(context, measurement, setMeasurement, referenceData)}
-            </div>
-            <div className="flex flex-col gap-6">
-              <ul className="list-none empty:hidden flex flex-wrap gap-4">
-                {measurement.tags.map((tag, index) => (
-                  <li key={index}>
-                    <Tag {...tag} />
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xl">{measurement.description}</p>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Svg src="/icons/command-line.svg" className="w-6 h-6" />
-                  {measurement.directory}
-                </div>
-                {measurement.radioisotopes.length > 0 && (
-                  <div className="flex gap-2 text-sm">
-                    <Svg src="/icons/beaker.svg" className="w-6 h-6" />
-                    <ul className="list-none flex flex-col">
-                      {measurement.radioisotopes.map((radioisotope, index) => (
-                        <li key={index}>{radioisotope.name}</li>
-                      ))}
-                    </ul>
+          <div className="flex flex-col gap-8">
+            <h1>{measurement.name}</h1>
+
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="flex justify-between items-start gap-6">
+                <div className="flex-1">
+                  <p className="text-xl mb-4">{measurement.description}</p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Svg src="/icons/command-line.svg" className="w-6 h-6" />
+                      {measurement.directory}
+                    </div>
+                    {measurement.radioisotopes.length > 0 && (
+                      <div className="flex gap-2 text-sm">
+                        <Svg src="/icons/beaker.svg" className="w-6 h-6" />
+                        <ul className="list-none flex flex-col">
+                          {measurement.radioisotopes.map(
+                            (radioisotope, index) => (
+                              <li key={index}>{radioisotope.name}</li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+                <div className="flex flex-col gap-4">
+                  <ul className="list-none empty:hidden flex flex-wrap gap-2">
+                    {measurement.tags.map((tag, index) => (
+                      <li key={index}>
+                        <Tag {...tag} />
+                      </li>
+                    ))}
+                  </ul>
+                  <ButtonGroup>
+                    <ButtonEdit
+                      path={`/experiments/${measurement.experiment_id}/measurements/${measurement.id}/edit`}
+                    />
+                  </ButtonGroup>
+                </div>
               </div>
-              <ButtonGroup>
-                <ButtonEdit
-                  path={`/experiments/${measurement.experiment_id}/measurements/${measurement.id}/edit`}
-                />
-              </ButtonGroup>
             </div>
+
+            <Tabs
+              tabs={measurementTabs}
+              active={context}
+              changeContext={setContext}
+            />
+            {measurementContextContent(
+              context,
+              measurement,
+              setMeasurement,
+              referenceData
+            )}
           </div>
         </>
       )}
     </Page>
-  );
-};
+  )
+}
 
-export default Measurement;
+export default Measurement

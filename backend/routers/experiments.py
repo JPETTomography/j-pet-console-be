@@ -153,7 +153,9 @@ def edit_experiment(
         experiment.end_date = experiment_data.end_date
         experiment.coordinator_id = experiment_data.coordinator_id
         experiment.detector_id = experiment_data.detector_id
-        experiment.reference_data = experiment_data.reference_data
+
+        if experiment_data.reference_data is not None:
+            experiment.reference_data = experiment_data.reference_data
 
         db.commit()
         db.refresh(experiment)

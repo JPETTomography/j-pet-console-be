@@ -225,6 +225,7 @@ class DataEntry(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     histo_dir = Column(String, nullable=False)
+    acquisition_date = Column(TIMESTAMP(timezone=True), nullable=True)
     data = Column(JSONB)
     measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
     measurement = relationship("Measurement", back_populates="data_entry")
