@@ -2,6 +2,9 @@ import socket
 import json
 import argparse
 import pika
+import os
+from datetime import datetime
+import re
 from database.database import get_session_local
 from database.models import DataEntry, Measurement, Detector, Experiment
 from sqlalchemy import func, desc
@@ -9,6 +12,22 @@ import logging
 
 # uncomment to debug
 # logging.basicConfig(level=logging.DEBUG)
+
+
+def extract_acquisition_date(filename: str) -> datetime:
+    basename = os.path.basename(filename)
+    pattern = r"^(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})"
+    match = re.match(pattern, basename)
+
+    if match:
+        year, month, day, hour, minute = match.groups()
+        try:
+            result = datetime(int(year), int(month), int(day), int(hour), int(minute))
+            return result
+        except ValueError as e:
+            return None
+    else:
+        return None
 
 
 def receive_data(producer_ip: str, producer_port: str) -> dict:
@@ -47,33 +66,49 @@ def consume_messages():
 def save_data_to_db(json_data, agent_code):
     gen = get_session_local()
     session = next(gen)
-    title = json_data["file"]
-    data = json_data["histogram"][0]
+    filename = json_data["file"]
+    histograms = json_data["histogram"]
+    histo_dir = histograms[0]["histo_dir"] if histograms else "unknown"
+
+    acquisition_date = extract_acquisition_date(filename)
+
+    if acquisition_date is None:
+        acquisition_date = datetime.now()
+
     print(session)
     detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
+    if not detector:
+        print(f"No detector found for agent_code: {agent_code}")
+        return
+
     experiment = (
         session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
     )
+    if not experiment:
+        print(f"No experiment found for detector_id: {detector.id}")
+        return
+
     measurement_match = session.query(Measurement).filter(
         Measurement.experiment_id == experiment.id
     )
     measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
+    if not measurement:
+        print(f"No measurement found for experiment_id: {experiment.id}")
+        return
     print(
         f"agent_code: {agent_code}, detector: {detector.id}, experiment: {experiment.id}, measurement: {measurement}"
     )
 
     try:
-        # @TODO cover the agent_code field
         new_data_entry = DataEntry(
-            data=data,
-            name="unnamed_entry",
-            histo_type=data["histo_type"],
-            histo_dir=data["histo_dir"],
+            data=histograms,  # The entire list of histograms
+            name=f"data_from_{filename}",
+            histo_dir=histo_dir,  # Directory from first histogram
+            acquisition_date=acquisition_date,  # Extracted date from filename
             measurement_id=measurement.id,
         )
         session.add(new_data_entry)
         session.commit()
-        print(f"Inserted data entry with title '{title}'")
     except Exception as e:
         session.rollback()
         print(f"Failed to insert data entry: {e}")

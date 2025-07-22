@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 import os
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel, Field
@@ -16,6 +16,7 @@ from backend.utills.utills import (
 import faker
 import random
 import uuid
+from datetime import datetime
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 
@@ -398,3 +399,111 @@ def create_sample_measurements(
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create measurements")
     return {"message": "Sample measurements created"}
+
+
+@router.get("/{id}/histogram-data")
+def get_filtered_histogram_data(
+    id: str,
+    start_time: Optional[datetime] = Query(
+        None, description="Start datetime filter (ISO format)"
+    ),
+    end_time: Optional[datetime] = Query(
+        None, description="End datetime filter (ISO format)"
+    ),
+    db: Session = Depends(get_session_local),
+):
+
+    measurement = (
+        db.query(models.Measurement).filter(models.Measurement.id == id).first()
+    )
+    if not measurement:
+        raise HTTPException(status_code=404, detail="Measurement not found")
+
+    query = db.query(models.DataEntry).filter(models.DataEntry.measurement_id == id)
+
+    if start_time:
+        query = query.filter(models.DataEntry.acquisition_date >= start_time)
+    if end_time:
+        query = query.filter(models.DataEntry.acquisition_date <= end_time)
+
+    data_entries = query.all()
+    if not data_entries:
+        return {
+            "measurement": measurement,
+            "data_entry": [],
+            "total_entries_aggregated": 0,
+            "date_range": {"start_time": start_time, "end_time": end_time},
+        }
+
+    aggregated_histograms = aggregate_histogram_data(data_entries)
+
+    date_range_str = ""
+    if start_time and end_time:
+        date_range_str = f" ({start_time.strftime('%Y-%m-%d %H:%M')} to {end_time.strftime('%Y-%m-%d %H:%M')})"
+    elif start_time:
+        date_range_str = f" (from {start_time.strftime('%Y-%m-%d %H:%M')})"
+    elif end_time:
+        date_range_str = f" (until {end_time.strftime('%Y-%m-%d %H:%M')})"
+
+    virtual_data_entry = {
+        "id": f"normalized_{id}",
+        "name": f"Normalized Data{date_range_str}",
+        "data": aggregated_histograms,
+        "acquisition_date": data_entries[0].acquisition_date,
+        "measurement_id": id,
+        "histo_dir": data_entries[0].histo_dir,
+    }
+
+    return {
+        "measurement": measurement,
+        "data_entry": [virtual_data_entry],
+        "total_entries_aggregated": len(data_entries),
+        "date_range": {"start_time": start_time, "end_time": end_time},
+    }
+
+
+def aggregate_histogram_data(data_entries):
+    if not data_entries:
+        return []
+
+    first_entry_data = data_entries[0].data
+    if not first_entry_data:
+        return []
+
+    num_entries = len(data_entries)
+    aggregated_histograms = []
+
+    for hist_index, first_histogram in enumerate(first_entry_data):
+        aggregated_hist = dict(first_histogram)
+
+        if "y" in aggregated_hist:
+            aggregated_y = list(aggregated_hist["y"])
+
+            for entry in data_entries[1:]:
+                hist_data = entry.data[hist_index]["y"]
+                for i, val in enumerate(hist_data):
+                    aggregated_y[i] += val
+
+            aggregated_y = [val / num_entries for val in aggregated_y]
+            aggregated_hist["y"] = aggregated_y
+
+        if "content" in aggregated_hist:
+            aggregated_content = [row[:] for row in aggregated_hist["content"]]
+
+            for entry in data_entries[1:]:
+                hist_content = entry.data[hist_index]["content"]
+                for i, row in enumerate(hist_content):
+                    for j, val in enumerate(row):
+                        aggregated_content[i][j] += val
+
+            aggregated_content = [
+                [val / num_entries for val in row] for row in aggregated_content
+            ]
+            aggregated_hist["content"] = aggregated_content
+
+        if "name" in aggregated_hist:
+            aggregated_hist["name"] = f"Normalized {aggregated_hist['name']}"
+
+        aggregated_histograms.append(aggregated_hist)
+
+    return aggregated_histograms
