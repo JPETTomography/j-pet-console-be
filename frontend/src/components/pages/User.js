@@ -13,6 +13,7 @@ import Page from "../partials/Page";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageUsers } from "../../utils/permissions";
 
 const User = () => {
   const navigate = useNavigate();
@@ -67,7 +68,9 @@ const User = () => {
                 <Svg src="/icons/at-symbol.svg" className="w-6 h-6" />
                 {user.email}
               </div>
-              <ButtonEdit path={`/users/${user.id}/edit`} />
+              {canManageUsers() && (
+                <ButtonEdit path={`/users/${user.id}/edit`} />
+              )}
             </div>
           </div>
         </>

@@ -1,15 +1,15 @@
 import { NavLink } from "react-router-dom";
 
 function navForRole(role) {
+  const baseNav = ["experiments", "detectors", "tags", "radioisotopes"];
+  
   switch (role) {
-    case "shifter":
-      return ["experiments", "tags", "radioisotopes"];
-    case "coordinator":
-      return ["experiments", "detectors", "tags", "radioisotopes"];
     case "admin":
-      return ["users", "experiments", "detectors", "tags", "radioisotopes"];
+      return ["users", ...baseNav];
+    case "coordinator":
+    case "shifter":
     default:
-      return ["experiments"];
+      return baseNav;
   }
 }
 

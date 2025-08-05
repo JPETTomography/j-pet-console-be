@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Login from "./components/pages/Login";
+import ProtectedRoute from "./components/partials/ProtectedRoute";
 
 import UsersList from "./components/pages/UsersList";
 import UserNew from "./components/pages/UserNew";
@@ -39,22 +40,50 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
 
-        <Route path="/users" element={<UsersList />} />
-        <Route path="/users/new" element={<UserNew />} />
-        <Route path="/users/:user_id" element={<User />} />
-        <Route path="/users/:user_id/edit" element={<UserEdit />} />
+        <Route path="/users" element={
+          <ProtectedRoute route="/users">
+            <UsersList />
+          </ProtectedRoute>
+        } />
+        <Route path="/users/new" element={
+          <ProtectedRoute route="/users">
+            <UserNew />
+          </ProtectedRoute>
+        } />
+        <Route path="/users/:user_id" element={
+          <ProtectedRoute route="/users">
+            <User />
+          </ProtectedRoute>
+        } />
+        <Route path="/users/:user_id/edit" element={
+          <ProtectedRoute route="/users">
+            <UserEdit />
+          </ProtectedRoute>
+        } />
 
         <Route path="/experiments" element={<ExperimentsList />} />
-        <Route path="/experiments/new" element={<ExperimentNew />} />
+        <Route path="/experiments/new" element={
+          <ProtectedRoute route="/experiments/new">
+            <ExperimentNew />
+          </ProtectedRoute>
+        } />
         <Route path="/experiments/:experiment_id" element={<Experiment />} />
         <Route
           path="/experiments/:experiment_id/edit"
-          element={<ExperimentEdit />}
+          element={
+            <ProtectedRoute route="/experiments/edit">
+              <ExperimentEdit />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="/experiments/:experiment_id/measurements/new"
-          element={<MeasurementNew />}
+          element={
+            <ProtectedRoute route="/measurements/new">
+              <MeasurementNew />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/experiments/:experiment_id/measurements/:measurement_id"
@@ -62,28 +91,56 @@ function App() {
         />
         <Route
           path="/experiments/:experiment_id/measurements/:measurement_id/edit"
-          element={<MeasurementEdit />}
+          element={
+            <ProtectedRoute route="/measurements/edit">
+              <MeasurementEdit />
+            </ProtectedRoute>
+          }
         />
 
         <Route path="/detectors" element={<DetectorsList />} />
-        <Route path="/detectors/new" element={<DetectorNew />} />
+        <Route path="/detectors/new" element={
+          <ProtectedRoute route="/detectors/new">
+            <DetectorNew />
+          </ProtectedRoute>
+        } />
         <Route path="/detectors/:detector_id" element={<Detector />} />
-        <Route path="/detectors/:detector_id/edit" element={<DetectorEdit />} />
+        <Route path="/detectors/:detector_id/edit" element={
+          <ProtectedRoute route="/detectors/edit">
+            <DetectorEdit />
+          </ProtectedRoute>
+        } />
 
         <Route path="/tags" element={<TagsList />} />
-        <Route path="/tags/new" element={<TagNew />} />
+        <Route path="/tags/new" element={
+          <ProtectedRoute route="/tags/new">
+            <TagNew />
+          </ProtectedRoute>
+        } />
         <Route path="/tags/:tag_id" element={<Tag />} />
-        <Route path="/tags/:tag_id/edit" element={<TagEdit />} />
+        <Route path="/tags/:tag_id/edit" element={
+          <ProtectedRoute route="/tags/edit">
+            <TagEdit />
+          </ProtectedRoute>
+        } />
 
         <Route path="/radioisotopes" element={<RadioisotopesList />} />
-        <Route path="/radioisotopes/new" element={<RadioisotopeNew />} />
+        <Route path="/radioisotopes/new" element={
+          <ProtectedRoute route="/radioisotopes/new">
+            <RadioisotopeNew />
+          </ProtectedRoute>
+        } />
         <Route
           path="/radioisotopes/:radioisotope_id"
           element={<Radioisotope />}
         />
         <Route
           path="/radioisotopes/:radioisotope_id/edit"
-          element={<RadioisotopeEdit />}
+          element={
+            <ProtectedRoute route="/radioisotopes/edit">
+              <RadioisotopeEdit />
+            </ProtectedRoute>
+          }
         />
 
         <Route path="*" element={<NotFound />} />

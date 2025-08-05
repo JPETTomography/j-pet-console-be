@@ -11,6 +11,7 @@ import Page from "../partials/Page";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageTags } from "../../utils/permissions";
 
 const Experiment = () => {
   const navigate = useNavigate();
@@ -61,7 +62,9 @@ const Experiment = () => {
             </div>
             <div className="grid grid-cols-1 gap-4 pt-2">
               <p className="text-xl">{tag.description}</p>
-              <ButtonEdit path={`/tags/${tag.id}/edit`} />
+              {canManageTags() && (
+                <ButtonEdit path={`/tags/${tag.id}/edit`} />
+              )}
             </div>
           </div>
         </>

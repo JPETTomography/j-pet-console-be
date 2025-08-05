@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { clearUserCache } from "../../utils/permissions";
 
 import Svg from "./Svg";
 
@@ -9,6 +10,7 @@ const CurrentUser = (props) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    clearUserCache(); // Clear permission cache on logout
     navigate("/");
   };
 

@@ -500,7 +500,6 @@ def aggregate_histogram_data(data_entries):
     if not first_entry_data:
         return []
 
-    num_entries = len(data_entries)
     aggregated_histograms = []
 
     for hist_index, first_histogram in enumerate(first_entry_data):
@@ -514,7 +513,7 @@ def aggregate_histogram_data(data_entries):
                 for i, val in enumerate(hist_data):
                     aggregated_y[i] += val
 
-            aggregated_y = [val / num_entries for val in aggregated_y]
+            aggregated_y = [val for val in aggregated_y]
             aggregated_hist["y"] = aggregated_y
 
         if "content" in aggregated_hist:
@@ -527,8 +526,7 @@ def aggregate_histogram_data(data_entries):
                         aggregated_content[i][j] += val
 
             aggregated_content = [
-                [val / num_entries for val in row]
-                for row in aggregated_content
+                [val for val in row] for row in aggregated_content
             ]
             aggregated_hist["content"] = aggregated_content
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearUserCache } from "./utils/permissions";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_SOURCE,
@@ -28,6 +29,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      clearUserCache(); // Clear permission cache on 401 errors
       error.message = "Unauthorized. Please log in again.";
     }
     return Promise.reject(error);

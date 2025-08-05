@@ -10,6 +10,7 @@ import ButtonNew from "../partials/ButtonNew";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageMeasurements } from "../../utils/permissions";
 
 const MeasurementsList = () => {
   const { experiment_id } = useParams();
@@ -54,9 +55,11 @@ const MeasurementsList = () => {
           items={measurements}
           ItemComponent={MeasurementCard}
           newButton={
-            <ButtonNew path={`/experiments/${experiment_id}/measurements/new`}>
-              Add new measurement
-            </ButtonNew>
+            canManageMeasurements() ? (
+              <ButtonNew path={`/experiments/${experiment_id}/measurements/new`}>
+                Add new measurement
+              </ButtonNew>
+            ) : null
           }
         />
       )}

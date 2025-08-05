@@ -16,7 +16,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class Role(Enum):
-    NONE = 0
+    USER = 0
     SHIFTER = 1
     COORDINATOR = 2
     ADMIN = 4
@@ -35,7 +35,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def verify_access_token(token: str, required_role: Role = Role.NONE):
+def verify_access_token(token: str, required_role: Role = Role.USER):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -60,7 +60,15 @@ def verify_access_token(token: str, required_role: Role = Role.NONE):
         if user is None:
             raise credentials_exception
 
-        user_role = Role[user["role"].upper()]
+        user_role_str = user.get("role")
+        if not user_role_str:
+            user_role = Role.USER
+        else:
+            try:
+                user_role = Role[user_role_str.upper()]
+            except KeyError:
+                user_role = Role.USER
+                
         if required_role.value > user_role.value:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
