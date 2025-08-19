@@ -92,7 +92,7 @@ export const canAccessRoute = (route) => {
     return canManageUsers();
   }
   
-  const routePattern = /\/([^\/]+)\/(?:new|[^\/]+\/edit)$/;
+  const routePattern = /\/([^/]+)\/(?:new|[^/]+\/edit)$/;
   const match = route.match(routePattern);
   
   if (match) {
@@ -110,7 +110,7 @@ export const canAccessRoute = (route) => {
   return isAuthenticated();
 };
 
-export default {
+const permissionsExports = {
   getCurrentUser,
   clearUserCache,
   getUserRoleValue,
@@ -126,3 +126,5 @@ export default {
   canAccessRoute,
   ENTITY_PERMISSIONS
 };
+
+export default permissionsExports;

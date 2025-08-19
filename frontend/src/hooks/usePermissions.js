@@ -35,7 +35,7 @@ export const usePermissions = () => {
       user: currentUser,
       role: currentUser.role
     };
-  }, [currentUser?.id, currentUser?.role]);
+  }, [currentUser]);
 
   return permissions;
 };
@@ -65,7 +65,7 @@ export const useEntityPermissions = (entityType) => {
       canEdit: canManage,
       canDelete: canManage
     };
-  }, [currentUser?.id, currentUser?.role, entityType]);
+  }, [currentUser, entityType]);
 
   return permissions;
 };

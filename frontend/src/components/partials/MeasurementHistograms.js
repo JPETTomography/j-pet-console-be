@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import Plot from "react-plotly.js"
 import api from "../../api"
 
@@ -26,28 +26,7 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    if (measurement?.id) {
-      const defaultDates = getDefaultDateTimes()
-      fetchFilteredData(defaultDates.start, defaultDates.end)
-    }
-  }, [measurement?.id])
-
-  const fetchAggregatedData = async () => {
-    await fetchFilteredData(startDateTime, endDateTime)
-  }
-
-  const resetTo24h = () => {
-    const defaultDates = getDefaultDateTimes()
-    
-    setStartDateTime(defaultDates.start)
-    setEndDateTime(defaultDates.end)
-    setError(null)
-    
-    fetchFilteredData(defaultDates.start, defaultDates.end)
-  }
-
-  const fetchFilteredData = async (startDate, endDate) => {
+  const fetchFilteredData = useCallback(async (startDate, endDate) => {
     setIsLoading(true)
     setError(null)
 
@@ -70,6 +49,27 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
     } finally {
       setIsLoading(false)
     }
+  }, [measurement?.id])
+
+  useEffect(() => {
+    if (measurement?.id) {
+      const defaultDates = getDefaultDateTimes()
+      fetchFilteredData(defaultDates.start, defaultDates.end)
+    }
+  }, [measurement?.id, fetchFilteredData])
+
+  const fetchAggregatedData = async () => {
+    await fetchFilteredData(startDateTime, endDateTime)
+  }
+
+  const resetTo24h = () => {
+    const defaultDates = getDefaultDateTimes()
+    
+    setStartDateTime(defaultDates.start)
+    setEndDateTime(defaultDates.end)
+    setError(null)
+    
+    fetchFilteredData(defaultDates.start, defaultDates.end)
   }
 
   const showAllData = () => {
