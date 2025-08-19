@@ -292,6 +292,7 @@ async def edit_measurement_comment(
         )
 
     comment.content = content
+    db.commit()  # Commit the content update
 
     if deleted_picture_ids:
         for pic_id in deleted_picture_ids:
