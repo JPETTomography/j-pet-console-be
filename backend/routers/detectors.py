@@ -1,3 +1,11 @@
+from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from backend.auth import get_current_user, get_current_user_with_role, Role
+import database.models as models
+from database.database import get_session_local
+from backend.routers.common import generate_models
+import faker
 import random
 
 import faker
@@ -42,7 +50,11 @@ def read_detector(id: str, db: Session = Depends(get_session_local)):
 
 
 @router.post("/new")
-def create_detector(detector_data: DetectorBase, db: Session = Depends(get_session_local)):
+def create_detector(
+    detector_data: DetectorBase,
+    db: Session = Depends(get_session_local),
+    current_user=Depends(get_current_user_with_role(Role.COORDINATOR)),
+):
     try:
         detector = models.Detector(
             name=detector_data.name,
@@ -56,7 +68,9 @@ def create_detector(detector_data: DetectorBase, db: Session = Depends(get_sessi
         return {"message": "Detector successfully created", "detector": detector}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create detector: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create detector: {str(e)}"
+        )
 
 
 @router.patch("/{id}/edit")
@@ -64,6 +78,7 @@ def edit_detector(
     id: str,
     detector_data: DetectorBase,
     db: Session = Depends(get_session_local),
+    current_user=Depends(get_current_user_with_role(Role.COORDINATOR)),
 ):
     try:
         detector = (

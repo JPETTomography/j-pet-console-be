@@ -12,7 +12,7 @@ const ENTITY_PERMISSIONS = {
   measurements: 'SHIFTER',
   tags: 'SHIFTER',
   radioisotopes: 'SHIFTER',
-  detectors: null // null means any authenticated user
+  detectors: 'COORDINATOR'
 };
 
 export { ENTITY_PERMISSIONS };

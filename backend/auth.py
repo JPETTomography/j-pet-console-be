@@ -68,7 +68,7 @@ def verify_access_token(token: str, required_role: Role = Role.USER):
                 user_role = Role[user_role_str.upper()]
             except KeyError:
                 user_role = Role.USER
-                
+
         if required_role.value > user_role.value:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

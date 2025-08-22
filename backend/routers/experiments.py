@@ -195,7 +195,7 @@ def read_experiment_measurements(
             status_code=404,
             detail=f"Experiment with id: {id} not found",
         )
-    
+
     offset = (page - 1) * size
     measurements = db.query(models.Measurement).filter(
         models.Measurement.experiment_id == id
@@ -206,7 +206,7 @@ def read_experiment_measurements(
         .offset(offset)
         .all()
     )
-    
+
     # Return empty list if no measurements found, don't raise 404
     return measurements
 
