@@ -112,7 +112,7 @@ admin.add_view(MeasurementDirectoryAdmin)
 admin.add_view(DataEntryAdmin)
 admin.add_view(MeteoReadoutAdmin)
 
-models.Base.metadata.create_all(bind=database.engine)
+# models.Base.metadata.create_all(bind=database.engine)
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 app.mount(
