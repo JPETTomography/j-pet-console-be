@@ -16,6 +16,7 @@ from backend.admin import (
     DetectorAdmin,
     ExperimentAdmin,
     MeasurementAdmin,
+    MeasurementDirectoryAdmin,
     MeteoReadoutAdmin,
     RadioisotopeAdmin,
     TagAdmin,
@@ -107,6 +108,7 @@ admin.add_view(ExperimentAdmin)
 admin.add_view(TagAdmin)
 admin.add_view(RadioisotopeAdmin)
 admin.add_view(MeasurementAdmin)
+admin.add_view(MeasurementDirectoryAdmin)
 admin.add_view(DataEntryAdmin)
 admin.add_view(MeteoReadoutAdmin)
 

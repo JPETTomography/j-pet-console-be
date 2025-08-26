@@ -10,7 +10,13 @@ from loguru import logger
 from sqlalchemy import desc, func
 
 from database.database import get_session_local
-from database.models import DataEntry, Detector, Experiment, Measurement, MeasurementDirectory
+from database.models import (
+    DataEntry,
+    Detector,
+    Experiment,
+    Measurement,
+    MeasurementDirectory,
+)
 
 
 def extract_acquisition_date(filename: str) -> datetime:
@@ -64,8 +70,6 @@ def consume_messages():
     channel.start_consuming()
 
 
-
-
 class JPETDBException(Exception):
     pass
 
@@ -106,6 +110,7 @@ def get_experiment(session, detector: Detector, agent_code: str):
 
     return experiment
 
+
 def save_folder_info_to_db(
     agent_code: str, path: str, event_type: str, timestamp: str
 ):
@@ -118,20 +123,40 @@ def save_folder_info_to_db(
         logger.error(e.msg())
 
     try:
+        # more cases as:
+        # https://python-watchdog.readthedocs.io/en/stable/_modules/watchdog/events.html#FileSystemEvent
+        logger.info(f"processing folder")
         match event_type:
             case "created":
-                measurement_dir = MeasurementDirectory(
-                    path=path,
-                    created_at=datetime.fromisoformat(timestamp),
-                    experiment_id=experiment.id
+                measurement_dir = (
+                    session.query(MeasurementDirectory)
+                    .filter(MeasurementDirectory.path == path)
+                    .first()
                 )
-                session.add(measurement_dir)
+
+                if measurement_dir:
+                    measurement_dir.available = True
+                else:
+                    # Create new directory
+                    measurement_dir = MeasurementDirectory(
+                        path=path,
+                        created_at=datetime.fromisoformat(timestamp),
+                        experiment_id=experiment.id,
+                        available=True,
+                    )
+                    logger.info(f"Creating entry: {measurement_dir}")
+                    session.add(measurement_dir)
                 session.commit()
             case "deleted":
-                # @TODO
-                pass
-        # @TODO more cases as per
-        # https://python-watchdog.readthedocs.io/en/stable/_modules/watchdog/events.html#FileSystemEvent
+                measurement_dir = (
+                    session.query(MeasurementDirectory)
+                    .filter(MeasurementDirectory.path == path)
+                    .first()
+                )
+                logger.info(f"Modifying entry: {measurement_dir}")
+                if measurement_dir:
+                    measurement_dir.available = False
+                    session.commit()
     except Exception as e:
         session.rollback()
         logger.error(f"Failed to insert data entry: {e}")
@@ -172,12 +197,8 @@ def save_data_entry_to_db(json_data, agent_code):
             f"No measurement found for experiment_id: {experiment.id}"
         )
         return
-    logger.info(
-        f"agent_code: {agent_code}, detector: {detector.id}"
-    )
-    logger.info(
-        f"experiment: {experiment.id}, measurement: {measurement}"
-    )
+    logger.info(f"agent_code: {agent_code}, detector: {detector.id}")
+    logger.info(f"experiment: {experiment.id}, measurement: {measurement}")
 
     try:
         new_data_entry = DataEntry(
@@ -199,6 +220,7 @@ def save_data_entry_to_db(json_data, agent_code):
 def callback(ch, method, properties, body):
     json_payload = json.loads(body.decode())
     agent_code = json_payload["agent_code"]
+    logger.info(f"Received message {json_payload}")
     match json_payload["message_type"]:
         case "connection_info":
             connection_data = json_payload["data"]
@@ -223,6 +245,7 @@ def callback(ch, method, properties, body):
         case "folder_info":
             event_data = json_payload["data"]
             save_folder_info_to_db(agent_code=agent_code, **event_data)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 if __name__ == "__main__":
