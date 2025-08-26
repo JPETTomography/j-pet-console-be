@@ -1,20 +1,22 @@
-from sqlalchemy import (
-    Column,
-    Boolean,
-    Integer,
-    Float,
-    String,
-    text,
-    TIMESTAMP,
-    ForeignKey,
-    event,
-)
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from database.database import Base
-from sqlalchemy.dialects.postgresql import JSONB
-from passlib.context import CryptContext
 import os
+
+from passlib.context import CryptContext
+from sqlalchemy import (
+    TIMESTAMP,
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    event,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from database.database import Base
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -106,7 +108,10 @@ class Experiment(Base):
 
     def __str__(self):
         return f"<Experiment id={self.id} name={self.name}>"
-    measurement_directories = relationship("MasurementDirectory", back_populates="experiment")
+
+    measurement_directories = relationship(
+        "MasurementDirectory", back_populates="experiment"
+    )
 
 
 class TagMeasurement(Base):
@@ -114,7 +119,9 @@ class TagMeasurement(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tag_id = Column(Integer, ForeignKey("tags.id"), nullable=False)
-    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement_id = Column(
+        Integer, ForeignKey("measurements.id"), nullable=False
+    )
 
     def __str__(self):
         return f"<TagMeasurement id={self.id} tag_id={self.tag_id} measurement_id={self.measurement_id}>"
@@ -124,8 +131,12 @@ class RadioisotopeMeasurement(Base):
     __tablename__ = "radioisotope_measurement"
 
     id = Column(Integer, primary_key=True, index=True)
-    radioisotope_id = Column(Integer, ForeignKey("radioisotopes.id"), nullable=False)
-    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    radioisotope_id = Column(
+        Integer, ForeignKey("radioisotopes.id"), nullable=False
+    )
+    measurement_id = Column(
+        Integer, ForeignKey("measurements.id"), nullable=False
+    )
 
     def __str__(self):
         return f"<RadioisotopeMeasurement id={self.id} radioisotope_id={self.radioisotope_id} measurement_id={self.measurement_id}>"
@@ -201,7 +212,9 @@ class Measurement(Base):
     )
     shifter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     shifter = relationship("User", back_populates="measurements")
-    experiment_id = Column(Integer, ForeignKey("experiments.id"), nullable=False)
+    experiment_id = Column(
+        Integer, ForeignKey("experiments.id"), nullable=False
+    )
     experiment = relationship("Experiment", back_populates="measurements")
     tags = relationship(
         "Tag", secondary="tag_measurement", back_populates="measurements"
@@ -215,18 +228,26 @@ class Measurement(Base):
     data_entry = relationship("DataEntry", back_populates="measurement")
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
     comments = relationship("Comment", back_populates="measurement")
-    directory = relationship("MeasurementDirectory", back_populate="measurement")
-    directory_id = Column(Integer, ForeignKey("measurement_directory.id"), nullable=False)
+    directory = relationship(
+        "MeasurementDirectory", back_populate="measurement"
+    )
+    directory_id = Column(
+        Integer, ForeignKey("measurement_directory.id"), nullable=False
+    )
 
     def __str__(self):
         return f"<Measurement id={self.id} name={self.name}>"
+
 
 class MeasurementDirectory(Base):
     __tablename__ = "measurement_directory"
     id = Column(Integer, primary_key=True, index=True)
     path = Column(String, nullable=False)
     measurement = relationship("Measurement", back_populates="directory")
-    experiment = relationship("Experiment", back_populates="measurement_directories")
+    experiment = relationship(
+        "Experiment", back_populates="measurement_directories"
+    )
+
 
 class DataEntry(Base):
     __tablename__ = "data_entry"
@@ -236,7 +257,9 @@ class DataEntry(Base):
     histo_dir = Column(String, nullable=False)
     acquisition_date = Column(TIMESTAMP(timezone=True), nullable=True)
     data = Column(JSONB)
-    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement_id = Column(
+        Integer, ForeignKey("measurements.id"), nullable=False
+    )
     measurement = relationship("Measurement", back_populates="data_entry")
 
     def __str__(self):
@@ -265,11 +288,15 @@ class MeteoReadout(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement_id = Column(
+        Integer, ForeignKey("measurements.id"), nullable=False
+    )
     measurement = relationship("Measurement", back_populates="meteo_readouts")
 
     def __str__(self):
-        return f"<MeteoReadout id={self.id} measurement_id={self.measurement_id}>"
+        return (
+            f"<MeteoReadout id={self.id} measurement_id={self.measurement_id}>"
+        )
 
 
 class Comment(Base):
@@ -280,12 +307,16 @@ class Comment(Base):
     created_at = Column(
         TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
     )
-    measurement_id = Column(Integer, ForeignKey("measurements.id"), nullable=False)
+    measurement_id = Column(
+        Integer, ForeignKey("measurements.id"), nullable=False
+    )
     measurement = relationship("Measurement", back_populates="comments")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User")
     comment_pictures = relationship(
-        "CommentPicture", back_populates="comment", cascade="all, delete-orphan"
+        "CommentPicture",
+        back_populates="comment",
+        cascade="all, delete-orphan",
     )
 
     def __str__(self):

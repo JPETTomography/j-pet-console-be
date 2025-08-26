@@ -1,6 +1,8 @@
-from database.database import Base
-from typing import Type, Callable
+from typing import Callable, Type
+
 from sqlalchemy.orm import Session
+
+from database.database import Base
 
 
 def generate_models(

@@ -1,14 +1,15 @@
+from sqladmin import ModelView
+
 from database.models import (
-    User,
+    DataEntry,
     Detector,
     Experiment,
-    Tag,
-    Radioisotope,
     Measurement,
-    DataEntry,
     MeteoReadout,
+    Radioisotope,
+    Tag,
+    User,
 )
-from sqladmin import ModelView
 
 
 class UserAdmin(ModelView, model=User):
@@ -29,7 +30,10 @@ class ExperimentAdmin(ModelView, model=Experiment):
         "coordinator.name",
         "detector.name",
     ]
-    column_labels = {"coordinator.name": "Coordinator", "detector.name": "Detector"}
+    column_labels = {
+        "coordinator.name": "Coordinator",
+        "detector.name": "Detector",
+    }
     form_ajax_refs = {
         "coordinator": {
             "fields": ("name",),
@@ -59,7 +63,11 @@ class RadioisotopeAdmin(ModelView, model=Radioisotope):
 
 class MeasurementAdmin(ModelView, model=Measurement):
     column_searchable_list = [Measurement.name]
-    column_list = [Measurement.name, Measurement.description, "experiment.name"]
+    column_list = [
+        Measurement.name,
+        Measurement.description,
+        "experiment.name",
+    ]
     column_labels = {"experiment.name": "Experiment"}
     form_ajax_refs = {
         "experiment": {
@@ -80,7 +88,10 @@ class DataEntryAdmin(ModelView, model=DataEntry):
 
 
 class MeteoReadoutAdmin(ModelView, model=MeteoReadout):
-    column_searchable_list = [MeteoReadout.station_time, MeteoReadout.agent_time]
+    column_searchable_list = [
+        MeteoReadout.station_time,
+        MeteoReadout.agent_time,
+    ]
     column_list = [
         MeteoReadout.station_time,
         MeteoReadout.agent_time,

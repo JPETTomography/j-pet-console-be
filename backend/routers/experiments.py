@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
-from typing import Optional
-from sqlalchemy.orm import Session, selectinload, joinedload
-from pydantic import BaseModel, Field
-import database.models as models
-from database.database import get_session_local
-from backend.auth import get_current_user_with_role, Role, get_current_user
-from backend.utills.utills import get_random_user
-from backend.routers.common import generate_models
-import random
-import faker
-from datetime import timedelta, datetime
 import json
+import random
+from datetime import datetime, timedelta
+from typing import Optional
+
+import faker
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session, joinedload, selectinload
+
+import database.models as models
+from backend.auth import Role, get_current_user, get_current_user_with_role
+from backend.routers.common import generate_models
+from backend.utills.utills import get_random_user
+from database.database import get_session_local
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -18,7 +20,9 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 class ExperimentBase(BaseModel):
     name: str = Field(..., example="Experiment Name")
-    description: str = Field(..., example="A detailed description of the experiment")
+    description: str = Field(
+        ..., example="A detailed description of the experiment"
+    )
     status: str = Field(..., example="draft")
     location: str = Field(..., example="New York")
     start_date: datetime = Field(..., example="2023-01-01T00:00:00")
@@ -28,12 +32,16 @@ class ExperimentBase(BaseModel):
 
 
 class ExperimentWithReference(ExperimentBase):
-    reference_data: Optional[dict] = Field(None, example={"reference_plots": []})
+    reference_data: Optional[dict] = Field(
+        None, example={"reference_plots": []}
+    )
 
 
 def generate_fake_experiment(db: Session = None):
     i = 0
-    detector_ids = [d.id for d in db.query(models.Detector.id).distinct().all()]
+    detector_ids = [
+        d.id for d in db.query(models.Detector.id).distinct().all()
+    ]
     sd_size = len(detector_ids)
     while True:
         start_date = generator.date_time_this_year(
@@ -84,7 +92,9 @@ def read_experiments(db: Session = Depends(get_session_local)):
     return (
         db.query(models.Experiment)
         .options(
-            selectinload(models.Experiment.coordinator).load_only(models.User.name)
+            selectinload(models.Experiment.coordinator).load_only(
+                models.User.name
+            )
         )
         .all()
     )
@@ -123,7 +133,9 @@ def read_experiment(id: str, db: Session = Depends(get_session_local)):
         db.query(models.Experiment)
         .filter(models.Experiment.id == id)
         .options(
-            selectinload(models.Experiment.coordinator).load_only(models.User.name)
+            selectinload(models.Experiment.coordinator).load_only(
+                models.User.name
+            )
         )
         .first()
         or f"No experiment with id: {id} found."
@@ -139,7 +151,9 @@ def edit_experiment(
 ):
     try:
         experiment = (
-            db.query(models.Experiment).filter(models.Experiment.id == id).first()
+            db.query(models.Experiment)
+            .filter(models.Experiment.id == id)
+            .first()
         )
         if not experiment:
             raise HTTPException(status_code=404, detail="Experiment not found")
@@ -195,7 +209,9 @@ def read_experiment_measurements(
 @router.post("/create_sample_experiments/")
 # @TODO remove this later
 def create_sample_experiments(
-    db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
+    db: Session = Depends(get_session_local),
+    amount: int = 10,
+    fake_data: dict = None,
 ):
     experiments = generate_models(
         models.Experiment, generate_fake_experiment, db, amount, fake_data
@@ -205,7 +221,9 @@ def create_sample_experiments(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create experiments")
+        raise HTTPException(
+            status_code=500, detail="Failed to create experiments"
+        )
     return {"message": "Sample experiments created"}
 
 
@@ -218,13 +236,17 @@ async def upload_reference_data(
 ):
     try:
         experiment = (
-            db.query(models.Experiment).filter(models.Experiment.id == id).first()
+            db.query(models.Experiment)
+            .filter(models.Experiment.id == id)
+            .first()
         )
         if not experiment:
             raise HTTPException(status_code=404, detail="Experiment not found")
 
         if not file.filename.endswith(".json"):
-            raise HTTPException(status_code=400, detail="File must be a JSON file")
+            raise HTTPException(
+                status_code=400, detail="File must be a JSON file"
+            )
 
         content = await file.read()
         try:
@@ -245,7 +267,9 @@ async def upload_reference_data(
             "message": "Reference data uploaded successfully",
             "filename": file.filename,
             "data_keys": (
-                list(reference_data.keys()) if isinstance(reference_data, dict) else []
+                list(reference_data.keys())
+                if isinstance(reference_data, dict)
+                else []
             ),
         }
 
@@ -254,14 +278,20 @@ async def upload_reference_data(
     except Exception as e:
         db.rollback()
         raise HTTPException(
-            status_code=500, detail=f"Failed to upload reference data: {str(e)}"
+            status_code=500,
+            detail=f"Failed to upload reference data: {str(e)}",
         )
 
 
 @router.get("/{id}/reference-data")
 def get_reference_data(id: str, db: Session = Depends(get_session_local)):
-    experiment = db.query(models.Experiment).filter(models.Experiment.id == id).first()
+    experiment = (
+        db.query(models.Experiment).filter(models.Experiment.id == id).first()
+    )
     if not experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
 
-    return {"experiment_id": experiment.id, "reference_data": experiment.reference_data}
+    return {
+        "experiment_id": experiment.id,
+        "reference_data": experiment.reference_data,
+    }

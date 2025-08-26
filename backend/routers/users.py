@@ -1,14 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field, EmailStr
-from backend.auth import get_current_user_with_role, Role
-import database.models as models
-from database.database import get_session_local
-import faker
 import random
+from typing import Optional
 
-router = APIRouter(dependencies=[Depends(get_current_user_with_role(Role.ADMIN))])
+import faker
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.orm import Session
+
+import database.models as models
+from backend.auth import Role, get_current_user_with_role
+from database.database import get_session_local
+
+router = APIRouter(
+    dependencies=[Depends(get_current_user_with_role(Role.ADMIN))]
+)
 
 generator = faker.Faker()
 
@@ -27,7 +31,8 @@ def generate_fake_user(db: Session = None):
             email=generator.unique.email(),
             password="Tajne123",
             role=random.choices(
-                [None, "shifter", "coordinator", "admin"], weights=(50, 25, 15, 10)
+                [None, "shifter", "coordinator", "admin"],
+                weights=(50, 25, 15, 10),
             )[0],
         )
 
@@ -66,19 +71,25 @@ def new_user(user_data: UserBase, db: Session = Depends(get_session_local)):
         return {"message": "User successfully created"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create user: {str(e)}"
+        )
 
 
 @router.get("/{id}")
 def read_user(id: str, db: Session = Depends(get_session_local)):
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:
-        raise HTTPException(status_code=404, detail=f"No user with id: {id} found.")
+        raise HTTPException(
+            status_code=404, detail=f"No user with id: {id} found."
+        )
     return user
 
 
 @router.patch("/{id}/edit")
-def edit_user(id: str, user_data: UserBase, db: Session = Depends(get_session_local)):
+def edit_user(
+    id: str, user_data: UserBase, db: Session = Depends(get_session_local)
+):
     try:
         user = db.query(models.User).filter(models.User.id == id).first()
         if not user:
@@ -94,11 +105,15 @@ def edit_user(id: str, user_data: UserBase, db: Session = Depends(get_session_lo
         return {"message": "User successfully updated"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update user: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update user: {str(e)}"
+        )
 
 
 @router.post("/create_sample_users/")
-def create_sample_users(db: Session = Depends(get_session_local), amount: int = 10):
+def create_sample_users(
+    db: Session = Depends(get_session_local), amount: int = 10
+):
     users = [generate_fake_user() for _ in range(amount)]
     try:
         db.add_all(users)
@@ -127,5 +142,7 @@ def create_test_users(db: Session = Depends(get_session_local)):
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create test users")
+        raise HTTPException(
+            status_code=500, detail="Failed to create test users"
+        )
     return {"message": "Test users created"}

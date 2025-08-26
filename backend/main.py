@@ -1,37 +1,43 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-import database.models as models
-import database.database as database
-import pika
-from sqladmin import Admin
-from backend.admin import (
-    UserAdmin,
-    DetectorAdmin,
-    ExperimentAdmin,
-    TagAdmin,
-    RadioisotopeAdmin,
-    MeasurementAdmin,
-    DataEntryAdmin,
-    MeteoReadoutAdmin,
-)
-from fastapi.security import OAuth2PasswordRequestForm
-from database.database import get_session_local
-from backend.routers import (
-    users,
-    detectors,
-    experiments,
-    tags,
-    radioisotopes,
-    measurements,
-    data_entry,
-    meteo_readouts,
-)
-from backend.auth import create_access_token, verify_access_token, oauth2_scheme
-from backend.fake_data.read_fake_data import fake_json
 import json
 import os
+
+import pika
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
+from sqladmin import Admin
+from sqlalchemy.orm import Session
+
+import database.database as database
+import database.models as models
+from backend.admin import (
+    DataEntryAdmin,
+    DetectorAdmin,
+    ExperimentAdmin,
+    MeasurementAdmin,
+    MeteoReadoutAdmin,
+    RadioisotopeAdmin,
+    TagAdmin,
+    UserAdmin,
+)
+from backend.auth import (
+    create_access_token,
+    oauth2_scheme,
+    verify_access_token,
+)
+from backend.fake_data.read_fake_data import fake_json
+from backend.routers import (
+    data_entry,
+    detectors,
+    experiments,
+    measurements,
+    meteo_readouts,
+    radioisotopes,
+    tags,
+    users,
+)
+from database.database import get_session_local
 
 rabbitmq_host = "rabbitmq"
 credentials = pika.PlainCredentials("user", "password")
@@ -68,13 +74,19 @@ def send_message(topic, message):
 app = FastAPI()
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(detectors.router, prefix="/detectors", tags=["detectors"])
-app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
+app.include_router(
+    experiments.router, prefix="/experiments", tags=["experiments"]
+)
 app.include_router(tags.router, prefix="/tags", tags=["tags"])
 app.include_router(
     radioisotopes.router, prefix="/radioisotopes", tags=["radioisotopes"]
 )
-app.include_router(measurements.router, prefix="/measurements", tags=["measurements"])
-app.include_router(data_entry.router, prefix="/data_entry", tags=["data_entry"])
+app.include_router(
+    measurements.router, prefix="/measurements", tags=["measurements"]
+)
+app.include_router(
+    data_entry.router, prefix="/data_entry", tags=["data_entry"]
+)
 app.include_router(
     meteo_readouts.router, prefix="/meteo_readouts", tags=["meteo_readouts"]
 )
@@ -101,7 +113,9 @@ admin.add_view(MeteoReadoutAdmin)
 models.Base.metadata.create_all(bind=database.engine)
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
-app.mount("/static/pictures/", StaticFiles(directory=PICTURES_DIR), name="pictures")
+app.mount(
+    "/static/pictures/", StaticFiles(directory=PICTURES_DIR), name="pictures"
+)
 
 
 @app.post("/token")
@@ -109,9 +123,15 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_session_local),
 ):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    user = (
+        db.query(models.User)
+        .filter(models.User.email == form_data.username)
+        .first()
+    )
     if not user or not user.verify_password(form_data.password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+        raise HTTPException(
+            status_code=400, detail="Incorrect email or password"
+        )
 
     user_data = {
         "name": user.name,
@@ -120,7 +140,11 @@ def login(
         "id": user.id,
     }
     access_token = create_access_token({"user": user_data})
-    return {"access_token": access_token, "token_type": "bearer", "user": user_data}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_data,
+    }
 
 
 @app.post("/verify-token")
@@ -150,10 +174,16 @@ def seed(db: Session = Depends(get_session_local), amount: int = 3):
     fake_data = fake_json("backend/fake_data/small_data.tsv")
     users.create_test_users(db)
     detectors.create_sample_detectors(db, fake_data=fake_data["Detector"])
-    experiments.create_sample_experiments(db, fake_data=fake_data["Experiment"])
+    experiments.create_sample_experiments(
+        db, fake_data=fake_data["Experiment"]
+    )
     tags.create_sample_tags(db, fake_data=fake_data["Tag"])
-    radioisotopes.create_sample_radioisotopes(db, fake_data=fake_data["Radioisotope"])
-    measurements.create_sample_measurements(db, fake_data=fake_data["Measurement"])
+    radioisotopes.create_sample_radioisotopes(
+        db, fake_data=fake_data["Radioisotope"]
+    )
+    measurements.create_sample_measurements(
+        db, fake_data=fake_data["Measurement"]
+    )
     data_entry.create_sample_data_entries(db, amount)
     meteo_readouts.create_sample_meteo_readouts(db, amount)
     return {"message": "Successfully seeded DB"}

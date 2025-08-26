@@ -1,11 +1,13 @@
-import jwt
 from datetime import datetime, timedelta, timezone
+from enum import Enum
+
+import jwt
 from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+
 import database.models as models
 from database.database import get_session_local
-from fastapi.security import OAuth2PasswordBearer
-from enum import Enum
 
 SECRET_KEY = "KROWAJETRAWE"  # TODO Change this to a strong secret
 ALGORITHM = "HS256"

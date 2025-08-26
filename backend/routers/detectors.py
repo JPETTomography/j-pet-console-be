@@ -1,21 +1,27 @@
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from backend.auth import get_current_user
-import database.models as models
-from database.database import get_session_local
-from backend.routers.common import generate_models
-import faker
 import random
+
+import faker
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+import database.models as models
+from backend.auth import get_current_user
+from backend.routers.common import generate_models
+from database.database import get_session_local
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 class DetectorBase(BaseModel):
     name: str = Field(..., example="Detector Name")
-    description: str = Field(..., example="A detailed description of the detector")
+    description: str = Field(
+        ..., example="A detailed description of the detector"
+    )
     status: str = Field(..., example="online")
-    agent_code: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000")
+    agent_code: str = Field(
+        ..., example="550e8400-e29b-41d4-a716-446655440000"
+    )
 
 
 @router.get("/")
@@ -25,18 +31,26 @@ def read_detectors(db: Session = Depends(get_session_local)):
 
 @router.get("/{id}")
 def read_detector(id: str, db: Session = Depends(get_session_local)):
-    detector = db.query(models.Detector).filter(models.Detector.id == id).first()
+    detector = (
+        db.query(models.Detector).filter(models.Detector.id == id).first()
+    )
     if not detector:
-        raise HTTPException(status_code=404, detail=f"No detector with id {id} found.")
+        raise HTTPException(
+            status_code=404, detail=f"No detector with id {id} found."
+        )
     return detector
 
 
 @router.patch("/{id}/edit")
 def edit_detector(
-    id: str, detector_data: DetectorBase, db: Session = Depends(get_session_local)
+    id: str,
+    detector_data: DetectorBase,
+    db: Session = Depends(get_session_local),
 ):
     try:
-        detector = db.query(models.Detector).filter(models.Detector.id == id).first()
+        detector = (
+            db.query(models.Detector).filter(models.Detector.id == id).first()
+        )
         if not detector:
             raise HTTPException(status_code=404, detail="Detector not found")
 
@@ -92,5 +106,7 @@ def create_sample_detectors(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create detectors")
+        raise HTTPException(
+            status_code=500, detail="Failed to create detectors"
+        )
     return {"message": "Sample detectors created"}
