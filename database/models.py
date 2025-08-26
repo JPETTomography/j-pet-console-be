@@ -110,7 +110,7 @@ class Experiment(Base):
         return f"<Experiment id={self.id} name={self.name}>"
 
     measurement_directories = relationship(
-        "MasurementDirectory", back_populates="experiment"
+        "MeasurementDirectory", back_populates="experiment"
     )
 
 
@@ -229,7 +229,7 @@ class Measurement(Base):
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
     comments = relationship("Comment", back_populates="measurement")
     directory = relationship(
-        "MeasurementDirectory", back_populate="measurement"
+        "MeasurementDirectory", back_populates="measurement"
     )
     directory_id = Column(
         Integer, ForeignKey("measurement_directory.id"), nullable=False
@@ -243,9 +243,16 @@ class MeasurementDirectory(Base):
     __tablename__ = "measurement_directory"
     id = Column(Integer, primary_key=True, index=True)
     path = Column(String, nullable=False)
+    available = Column(Boolean, default=True, nullable=False)
+    created_at = Column(
+        TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
+    )
     measurement = relationship("Measurement", back_populates="directory")
     experiment = relationship(
         "Experiment", back_populates="measurement_directories"
+    )
+    experiment_id = Column(
+        Integer, ForeignKey("experiments.id"), nullable=False
     )
 
 

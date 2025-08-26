@@ -5,6 +5,7 @@ from database.models import (
     Detector,
     Experiment,
     Measurement,
+    MeasurementDirectory,
     MeteoReadout,
     Radioisotope,
     Tag,
@@ -100,6 +101,30 @@ class MeteoReadoutAdmin(ModelView, model=MeteoReadout):
     column_labels = {"measurement.name": "Measurement"}
     form_ajax_refs = {
         "measurement": {
+            "fields": ("name",),
+            "order_by": "name",
+        },
+    }
+
+
+class MeasurementDirectoryAdmin(ModelView, model=MeasurementDirectory):
+    column_searchable_list = [
+        MeasurementDirectory.path,
+        MeasurementDirectory.created_at,
+        MeasurementDirectory.available,
+        MeasurementDirectory.experiment_id,
+    ]
+    column_list = [
+        MeasurementDirectory.path,
+        MeasurementDirectory.created_at,
+        MeasurementDirectory.available,
+        MeasurementDirectory.experiment_id,
+        "experiment.name",
+    ]
+
+    column_labels = {"experiment.name": "Experiment"}
+    form_ajax_refs = {
+        "experiment": {
             "fields": ("name",),
             "order_by": "name",
         },
