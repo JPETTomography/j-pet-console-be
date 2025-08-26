@@ -1,22 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 import os
-from sqlalchemy.orm import Session, joinedload
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from backend.routers.common import generate_models
-import database.models as models
-from database.database import get_session_local
-from backend.auth import get_current_user_with_role, Role, get_current_user
-from sqlalchemy import func
-from backend.utills.utills import (
-    get_random_user,
-    get_random_tags,
-    get_random_radioisotopes,
-)
-import faker
 import random
 import uuid
 from datetime import datetime
+from typing import List, Optional
+
+import faker
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+)
+from pydantic import BaseModel, Field
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+
+import database.models as models
+from backend.auth import Role, get_current_user, get_current_user_with_role
+from backend.routers.common import generate_models
+from backend.utills.utills import (
+    get_random_radioisotopes,
+    get_random_tags,
+    get_random_user,
+)
+from database.database import get_session_local
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 
@@ -26,7 +36,9 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 class MeasurementBase(BaseModel):
     name: str = Field(..., example="Measurement Name")
-    description: str = Field(..., example="A detailed description of the measurement")
+    description: str = Field(
+        ..., example="A detailed description of the measurement"
+    )
     directory: str = Field(..., example="/path/to/directory")
     number_of_files: int = Field(..., example=5)
     patient_reference: str = Field(..., example="Patient Reference")
@@ -197,7 +209,9 @@ async def add_measurement_comment(
     user: models.User = Depends(get_current_user),
 ):
     measurement = (
-        db.query(models.Measurement).filter(models.Measurement.id == id).first()
+        db.query(models.Measurement)
+        .filter(models.Measurement.id == id)
+        .first()
     )
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
@@ -292,7 +306,8 @@ async def edit_measurement_comment(
             "measurement_id": comment.measurement_id,
             "created_at": str(comment.created_at),
             "pictures": [
-                CommentPictureResponse.from_orm(pic) for pic in comment.comment_pictures
+                CommentPictureResponse.from_orm(pic)
+                for pic in comment.comment_pictures
             ],
         },
     }
@@ -304,7 +319,8 @@ async def save_comment_pictures(files, comment_id, db):
         for file in files:
             if not file.content_type.startswith("image/"):
                 raise HTTPException(
-                    status_code=400, detail=f"File '{file.filename}' is not an image."
+                    status_code=400,
+                    detail=f"File '{file.filename}' is not an image.",
                 )
             ext = os.path.splitext(file.filename)[1]
             filename = f"{comment_id}_{uuid.uuid4().hex}{ext}"
@@ -313,7 +329,9 @@ async def save_comment_pictures(files, comment_id, db):
                 content_bytes = await file.read()
                 f.write(content_bytes)
             picture_url = f"/static/pictures/{filename}"
-            picture = models.CommentPicture(path=picture_url, comment_id=comment_id)
+            picture = models.CommentPicture(
+                path=picture_url, comment_id=comment_id
+            )
             db.add(picture)
         db.commit()
 
@@ -362,10 +380,14 @@ def edit_measurement(
 ):
     try:
         measurement = (
-            db.query(models.Measurement).filter(models.Measurement.id == id).first()
+            db.query(models.Measurement)
+            .filter(models.Measurement.id == id)
+            .first()
         )
         if not measurement:
-            raise HTTPException(status_code=404, detail="Measurement not found")
+            raise HTTPException(
+                status_code=404, detail="Measurement not found"
+            )
 
         measurement.name = measurement_data.name
         measurement.description = measurement_data.description
@@ -387,7 +409,9 @@ def edit_measurement(
 
 @router.post("/create_sample_measurements/")
 def create_sample_measurements(
-    db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
+    db: Session = Depends(get_session_local),
+    amount: int = 10,
+    fake_data: dict = None,
 ):
     measurements = generate_models(
         models.Measurement, generate_fake_measurement, db, amount, fake_data
@@ -397,7 +421,9 @@ def create_sample_measurements(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create measurements")
+        raise HTTPException(
+            status_code=500, detail="Failed to create measurements"
+        )
     return {"message": "Sample measurements created"}
 
 
@@ -414,12 +440,16 @@ def get_filtered_histogram_data(
 ):
 
     measurement = (
-        db.query(models.Measurement).filter(models.Measurement.id == id).first()
+        db.query(models.Measurement)
+        .filter(models.Measurement.id == id)
+        .first()
     )
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
-    query = db.query(models.DataEntry).filter(models.DataEntry.measurement_id == id)
+    query = db.query(models.DataEntry).filter(
+        models.DataEntry.measurement_id == id
+    )
 
     if start_time:
         query = query.filter(models.DataEntry.acquisition_date >= start_time)
@@ -497,7 +527,8 @@ def aggregate_histogram_data(data_entries):
                         aggregated_content[i][j] += val
 
             aggregated_content = [
-                [val / num_entries for val in row] for row in aggregated_content
+                [val / num_entries for val in row]
+                for row in aggregated_content
             ]
             aggregated_hist["content"] = aggregated_content
 

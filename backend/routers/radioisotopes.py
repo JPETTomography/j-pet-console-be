@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
-import database.models as models
-from backend.auth import get_current_user_with_role, Role, get_current_user
-from database.database import get_session_local
-from backend.routers.common import generate_models
-import faker
 import random
+
+import faker
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+import database.models as models
+from backend.auth import Role, get_current_user, get_current_user_with_role
+from backend.routers.common import generate_models
+from database.database import get_session_local
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -15,7 +17,9 @@ ROLE = "shifter"
 
 class RadioisotopeBase(BaseModel):
     name: str = Field(..., example="Radioisotope Name")
-    description: str = Field(..., example="A detailed description of the radioisotope")
+    description: str = Field(
+        ..., example="A detailed description of the radioisotope"
+    )
     activity: float = Field(..., example=1.23)
     halflife: float = Field(..., example=4.56)
 
@@ -72,7 +76,9 @@ def new_radioisotope(
 @router.get("/{id}")
 def read_radioisotope(id: str, db: Session = Depends(get_session_local)):
     radioisotope = (
-        db.query(models.Radioisotope).filter(models.Radioisotope.id == id).first()
+        db.query(models.Radioisotope)
+        .filter(models.Radioisotope.id == id)
+        .first()
     )
     if not radioisotope:
         raise HTTPException(
@@ -90,10 +96,14 @@ def edit_radioisotope(
 ):
     try:
         radioisotope = (
-            db.query(models.Radioisotope).filter(models.Radioisotope.id == id).first()
+            db.query(models.Radioisotope)
+            .filter(models.Radioisotope.id == id)
+            .first()
         )
         if not radioisotope:
-            raise HTTPException(status_code=404, detail="Radioisotope not found")
+            raise HTTPException(
+                status_code=404, detail="Radioisotope not found"
+            )
 
         # Update fields
         radioisotope.name = radioisotope_data.name
@@ -114,7 +124,9 @@ def edit_radioisotope(
 @router.post("/create_sample_radioisotopes/")
 # @TODO remove this later
 def create_sample_radioisotopes(
-    db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
+    db: Session = Depends(get_session_local),
+    amount: int = 10,
+    fake_data: dict = None,
 ):
     radioisotopes = generate_models(
         models.Radioisotope, generate_fake_radioisotope, db, amount, fake_data
@@ -124,5 +136,7 @@ def create_sample_radioisotopes(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create radioisotopes")
+        raise HTTPException(
+            status_code=500, detail="Failed to create radioisotopes"
+        )
     return {"message": "Sample radioisotopes created"}

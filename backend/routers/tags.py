@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
-import database.models as models
-from backend.auth import get_current_user_with_role, Role, get_current_user
-from database.database import get_session_local
-from backend.routers.common import generate_models
-import faker
 import random
+
+import faker
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+import database.models as models
+from backend.auth import Role, get_current_user, get_current_user_with_role
+from backend.routers.common import generate_models
+from database.database import get_session_local
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -58,14 +60,18 @@ def new_tag(
         return {"message": "Tag successfully created"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create tag: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create tag: {str(e)}"
+        )
 
 
 @router.get("/{id}")
 def read_tag(id: str, db: Session = Depends(get_session_local)):
     tag = db.query(models.Tag).filter(models.Tag.id == id).first()
     if not tag:
-        raise HTTPException(status_code=404, detail=f"No tag with id {id} found.")
+        raise HTTPException(
+            status_code=404, detail=f"No tag with id {id} found."
+        )
     return tag
 
 
@@ -90,15 +96,21 @@ def edit_tag(
         return {"message": "Tag successfully updated"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update tag: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update tag: {str(e)}"
+        )
 
 
 @router.post("/create_sample_tags/")
 # @TODO remove this later
 def create_sample_tags(
-    db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
+    db: Session = Depends(get_session_local),
+    amount: int = 10,
+    fake_data: dict = None,
 ):
-    tags = generate_models(models.Tag, generate_fake_tag, db, amount, fake_data)
+    tags = generate_models(
+        models.Tag, generate_fake_tag, db, amount, fake_data
+    )
     try:
         db.add_all(tags)
         db.commit()

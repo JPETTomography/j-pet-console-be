@@ -1,12 +1,14 @@
+import random
+
+import faker
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 import database.models as models
-from database.database import get_session_local
 from backend.auth import get_current_user
-from backend.utills.utills import get_random_measurement
 from backend.routers.common import generate_models
-import faker
-import random
+from backend.utills.utills import get_random_measurement
+from database.database import get_session_local
 
 generator = faker.Faker()
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -42,7 +44,9 @@ def read_data_entrie(id: str, db: Session = Depends(get_session_local)):
 @router.post("/create_sample_data_entries/")
 # @TODO remove this later
 def create_sample_data_entries(
-    db: Session = Depends(get_session_local), amount: int = 10, fake_data: dict = None
+    db: Session = Depends(get_session_local),
+    amount: int = 10,
+    fake_data: dict = None,
 ):
     data_entry = generate_models(
         models.DataEntry, generate_fake_data_entry, db, amount, fake_data
@@ -52,5 +56,7 @@ def create_sample_data_entries(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create data_entry")
+        raise HTTPException(
+            status_code=500, detail="Failed to create data_entry"
+        )
     return {"message": "Sample data_entry created"}

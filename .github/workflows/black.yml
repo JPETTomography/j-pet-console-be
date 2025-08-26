@@ -1,0 +1,26 @@
+name: Check formatting (Black + isort)
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  lint-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install formatters
+        run: pip install black==24.4.2 isort==5.13.2
+
+      # isort first, then black
+      - name: isort (check)
+        run: isort --check --diff .
+
+      - name: black (check)
+        run: black --check --diff .

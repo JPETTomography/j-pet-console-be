@@ -1,19 +1,21 @@
+import random
+import uuid
 from datetime import timedelta
+
 import faker
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from database.models import (
-    User,
+    DataEntry,
     Detector,
     Experiment,
-    Tag,
-    Radioisotope,
     Measurement,
-    DataEntry,
     MeteoReadout,
+    Radioisotope,
+    Tag,
+    User,
 )
-import random
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-import uuid
 
 generator = faker.Faker()
 

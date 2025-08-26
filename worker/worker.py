@@ -1,14 +1,16 @@
-import socket
-import json
 import argparse
-import pika
-import os
-from datetime import datetime
-import re
-from database.database import get_session_local
-from database.models import DataEntry, Measurement, Detector, Experiment
-from sqlalchemy import func, desc
+import json
 import logging
+import os
+import re
+import socket
+from datetime import datetime
+
+import pika
+from sqlalchemy import desc, func
+
+from database.database import get_session_local
+from database.models import DataEntry, Detector, Experiment, Measurement
 
 # uncomment to debug
 # logging.basicConfig(level=logging.DEBUG)
@@ -22,7 +24,9 @@ def extract_acquisition_date(filename: str) -> datetime:
     if match:
         year, month, day, hour, minute = match.groups()
         try:
-            result = datetime(int(year), int(month), int(day), int(hour), int(minute))
+            result = datetime(
+                int(year), int(month), int(day), int(hour), int(minute)
+            )
             return result
         except ValueError as e:
             return None
@@ -76,13 +80,19 @@ def save_data_to_db(json_data, agent_code):
         acquisition_date = datetime.now()
 
     print(session)
-    detector = session.query(Detector).filter(Detector.agent_code == agent_code).first()
+    detector = (
+        session.query(Detector)
+        .filter(Detector.agent_code == agent_code)
+        .first()
+    )
     if not detector:
         print(f"No detector found for agent_code: {agent_code}")
         return
 
     experiment = (
-        session.query(Experiment).filter(Experiment.detector_id == detector.id).first()
+        session.query(Experiment)
+        .filter(Experiment.detector_id == detector.id)
+        .first()
     )
     if not experiment:
         print(f"No experiment found for detector_id: {detector.id}")
@@ -91,7 +101,9 @@ def save_data_to_db(json_data, agent_code):
     measurement_match = session.query(Measurement).filter(
         Measurement.experiment_id == experiment.id
     )
-    measurement = measurement_match.order_by(desc(Measurement.created_at)).first()
+    measurement = measurement_match.order_by(
+        desc(Measurement.created_at)
+    ).first()
     if not measurement:
         print(f"No measurement found for experiment_id: {experiment.id}")
         return
