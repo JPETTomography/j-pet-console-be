@@ -1,18 +1,4 @@
 import os
-from sqlalchemy.orm import Session, joinedload
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from backend.routers.common import generate_models
-import database.models as models
-from database.database import get_session_local
-from backend.auth import get_current_user_with_role, Role, get_current_user
-from sqlalchemy import func, text
-from backend.utills.utills import (
-    get_random_user,
-    get_random_tags,
-    get_random_radioisotopes,
-)
-import faker
 import random
 import uuid
 from datetime import datetime
@@ -29,7 +15,7 @@ from fastapi import (
     UploadFile,
 )
 from pydantic import BaseModel, Field
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session, joinedload
 
 import database.models as models
@@ -467,10 +453,14 @@ def get_filtered_histogram_data(
         )
     except Exception as e:
         print(f"SQL aggregation failed, falling back to Python: {e}")
-        query = db.query(models.DataEntry).filter(models.DataEntry.measurement_id == id)
+        query = db.query(models.DataEntry).filter(
+            models.DataEntry.measurement_id == id
+        )
 
         if start_time:
-            query = query.filter(models.DataEntry.acquisition_date >= start_time)
+            query = query.filter(
+                models.DataEntry.acquisition_date >= start_time
+            )
         if end_time:
             query = query.filter(models.DataEntry.acquisition_date <= end_time)
 
@@ -492,7 +482,9 @@ def get_filtered_histogram_data(
             models.DataEntry.acquisition_date >= start_time
         )
     if end_time:
-        count_query = count_query.filter(models.DataEntry.acquisition_date <= end_time)
+        count_query = count_query.filter(
+            models.DataEntry.acquisition_date <= end_time
+        )
 
     total_entries = count_query.count()
 
@@ -519,7 +511,9 @@ def get_filtered_histogram_data(
         "id": f"normalized_{id}",
         "name": f"Normalized Data{date_range_str}",
         "data": aggregated_histograms,
-        "acquisition_date": first_entry.acquisition_date if first_entry else None,
+        "acquisition_date": (
+            first_entry.acquisition_date if first_entry else None
+        ),
         "measurement_id": id,
         "histo_dir": first_entry.histo_dir if first_entry else "",
     }
@@ -575,7 +569,9 @@ def aggregate_histogram_data(data_entries):
             if content_matrices:
                 aggregated_content = []
                 for row_idx in range(len(content_matrices[0])):
-                    row_values = [matrix[row_idx] for matrix in content_matrices]
+                    row_values = [
+                        matrix[row_idx] for matrix in content_matrices
+                    ]
                     aggregated_row = [sum(vals) for vals in zip(*row_values)]
                     aggregated_content.append(aggregated_row)
                 aggregated_hist["content"] = aggregated_content

@@ -93,7 +93,9 @@ def read_user(id: str, db: Session = Depends(get_session_local)):
 
 
 @router.patch("/{id}/edit")
-def edit_user(id: str, user_data: UserEdit, db: Session = Depends(get_session_local)):
+def edit_user(
+    id: str, user_data: UserEdit, db: Session = Depends(get_session_local)
+):
     try:
         user = db.query(models.User).filter(models.User.id == id).first()
         if not user:

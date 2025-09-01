@@ -189,7 +189,9 @@ def read_experiment_measurements(
     size: int = Query(10, le=10),
 ):
     # First check if experiment exists
-    experiment = db.query(models.Experiment).filter(models.Experiment.id == id).first()
+    experiment = (
+        db.query(models.Experiment).filter(models.Experiment.id == id).first()
+    )
     if not experiment:
         raise HTTPException(
             status_code=404,
