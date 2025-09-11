@@ -4,6 +4,7 @@ import os
 import re
 import socket
 from datetime import datetime
+from pathlib import Path
 
 import pika
 from loguru import logger
@@ -186,6 +187,12 @@ def save_data_entry_to_db(json_data, agent_code):
 
     # @TODO this will need to change based on the directory which
     # the event comes from
+    #
+    measurement_dir = (
+        session.query(MeasurementDirectory)
+        .filter(MeasurementDirectory.path == str(Path(filename).parent))
+        .first()
+    )
     measurement_match = session.query(Measurement).filter(
         Measurement.experiment_id == experiment.id
     )

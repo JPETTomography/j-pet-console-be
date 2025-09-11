@@ -11,6 +11,7 @@ from database.models import (
     Detector,
     Experiment,
     Measurement,
+    MeasurementDirectory,
     MeteoReadout,
     Radioisotope,
     Tag,
@@ -50,6 +51,10 @@ def get_random_radioisotopes(db: Session, amount=1):
 
 def get_random_measurement(db: Session):
     return db.query(Measurement).order_by(func.random()).first()
+
+
+def get_random_measurement_directory(db: Session):
+    return db.query(MeasurementDirectory).order_by(func.random()).first()
 
 
 def get_random_data_entry(db: Session):

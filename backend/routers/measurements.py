@@ -25,7 +25,7 @@ from backend.utills.utills import (
     get_random_radioisotopes,
     get_random_tags,
     get_random_user,
-)
+    get_random_measurement_directory
 from database.database import get_session_local
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
@@ -77,9 +77,10 @@ def generate_fake_measurement(db: Session = None):
         yield dict(
             name=generator.catch_phrase(),
             description=generator.text(max_nb_chars=200),
-            directory="/".join(
-                [generator.catch_phrase().partition(" ")[0] for _ in range(2)]
-            ),
+            # directory="/".join(
+            #     [generator.catch_phrase().partition(" ")[0] for _ in range(2)]
+            # ),
+            directory_id=get_random_measurement_directory(db).id.
             number_of_files=random.randint(1, 10),
             patient_reference=generator.text(max_nb_chars=200),
             shifter_id=get_random_user(db).id,
@@ -98,6 +99,7 @@ def generate_measurement(
     patient_reference: str,
     shifter_id: int,
     experiment_id: int,
+    measuerement_directory_id: int,
 ):
     return models.Measurement(
         name=name,
@@ -107,6 +109,7 @@ def generate_measurement(
         patient_reference=patient_reference,
         shifter_id=shifter_id,
         experiment_id=experiment_id,
+        directory_id=measuerement_directory_id
     )
 
 
