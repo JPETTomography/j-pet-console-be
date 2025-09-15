@@ -109,10 +109,6 @@ class Experiment(Base):
     def __str__(self):
         return f"<Experiment id={self.id} name={self.name}>"
 
-    measurement_directories = relationship(
-        "MasurementDirectory", back_populates="experiment"
-    )
-
 
 class TagMeasurement(Base):
     __tablename__ = "tag_measurement"
@@ -199,6 +195,7 @@ class Measurement(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+    directory = Column(String, nullable=False)
     number_of_files = Column(Integer, nullable=False)
     patient_reference = Column(String, nullable=False)
     created_at = Column(
@@ -224,29 +221,12 @@ class Measurement(Base):
         secondary="radioisotope_measurement",
         back_populates="measurements",
     )
-
     data_entry = relationship("DataEntry", back_populates="measurement")
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
     comments = relationship("Comment", back_populates="measurement")
-    directory = relationship(
-        "MeasurementDirectory", back_populate="measurement"
-    )
-    directory_id = Column(
-        Integer, ForeignKey("measurement_directory.id"), nullable=False
-    )
 
     def __str__(self):
         return f"<Measurement id={self.id} name={self.name}>"
-
-
-class MeasurementDirectory(Base):
-    __tablename__ = "measurement_directory"
-    id = Column(Integer, primary_key=True, index=True)
-    path = Column(String, nullable=False)
-    measurement = relationship("Measurement", back_populates="directory")
-    experiment = relationship(
-        "Experiment", back_populates="measurement_directories"
-    )
 
 
 class DataEntry(Base):
