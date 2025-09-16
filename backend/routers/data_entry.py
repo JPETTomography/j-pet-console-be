@@ -15,7 +15,7 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 def generate_fake_data_entry(db: Session = None):
-    json_path = "additional_examplary_data/example_data.json"
+    json_path = "backend/fake_data/example_data.json"
 
     try:
         with open(json_path, "r") as f:
