@@ -103,7 +103,6 @@ class Experiment(Base):
     coordinator = relationship("User", back_populates="experiments")
     detector_id = Column(Integer, ForeignKey("detectors.id"), nullable=False)
     detector = relationship("Detector", back_populates="experiments")
-    measurements = relationship("Measurement", back_populates="experiment")
     reference_data = Column(JSONB)
 
     def __str__(self):
@@ -212,10 +211,6 @@ class Measurement(Base):
     )
     shifter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     shifter = relationship("User", back_populates="measurements")
-    experiment_id = Column(
-        Integer, ForeignKey("experiments.id"), nullable=False
-    )
-    experiment = relationship("Experiment", back_populates="measurements")
     tags = relationship(
         "Tag", secondary="tag_measurement", back_populates="measurements"
     )
@@ -229,7 +224,7 @@ class Measurement(Base):
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
     comments = relationship("Comment", back_populates="measurement")
     directory = relationship(
-        "MeasurementDirectory", back_populates="measurement"
+        "MeasurementDirectory", back_populates="measurements"
     )
     directory_id = Column(
         Integer, ForeignKey("measurement_directory.id"), nullable=False
@@ -242,12 +237,12 @@ class Measurement(Base):
 class MeasurementDirectory(Base):
     __tablename__ = "measurement_directory"
     id = Column(Integer, primary_key=True, index=True)
-    path = Column(String, nullable=False)
+    path = Column(String, nullable=False, unique=True)
     available = Column(Boolean, default=True, nullable=False)
     created_at = Column(
         TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
     )
-    measurement = relationship("Measurement", back_populates="directory")
+    measurements = relationship("Measurement", back_populates="directory")
     experiment = relationship(
         "Experiment", back_populates="measurement_directories"
     )

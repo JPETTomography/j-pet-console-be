@@ -26,6 +26,7 @@ from backend.utills.utills import (
     get_random_tags,
     get_random_user,
     get_random_measurement_directory
+)
 from database.database import get_session_local
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
@@ -43,7 +44,6 @@ class MeasurementBase(BaseModel):
     number_of_files: int = Field(..., example=5)
     patient_reference: str = Field(..., example="Patient Reference")
     shifter_id: int = Field(..., example=1)
-    experiment_id: int = Field(..., example=1)
 
 
 class CommentPictureResponse(BaseModel):
@@ -68,23 +68,22 @@ class CommentResponse(BaseModel):
 
 
 def generate_fake_measurement(db: Session = None):
-    all_experiments = db.query(models.Experiment.id).order_by(func.random())
-    experiments_list = [exp.id for exp in all_experiments]
-    experiments_list_size = len(experiments_list)
+    all_measurement_directory = db.query(models.MeasurementDirectory.id).order_by(func.random())
+    measurement_directory_list = [dir.id for dir in all_measurement_directory]
+    measurement_directory_list_size = len(measurement_directory_list)
     i = 0
     while True:
-        experiment_id = experiments_list[i % experiments_list_size]
+        measurement_directory_id = measurement_directory_list[i % measurement_directory_list_size]
         yield dict(
             name=generator.catch_phrase(),
             description=generator.text(max_nb_chars=200),
             # directory="/".join(
             #     [generator.catch_phrase().partition(" ")[0] for _ in range(2)]
             # ),
-            directory_id=get_random_measurement_directory(db).id.
+            directory_id=measurement_directory_id,
             number_of_files=random.randint(1, 10),
             patient_reference=generator.text(max_nb_chars=200),
             shifter_id=get_random_user(db).id,
-            experiment_id=experiment_id,
             tags=get_random_tags(db, random.randint(0, 2)),
             radioisotopes=get_random_radioisotopes(db, random.randint(0, 2)),
         )
@@ -98,7 +97,6 @@ def generate_measurement(
     number_of_files: int,
     patient_reference: str,
     shifter_id: int,
-    experiment_id: int,
     measuerement_directory_id: int,
 ):
     return models.Measurement(
@@ -108,7 +106,6 @@ def generate_measurement(
         number_of_files=number_of_files,
         patient_reference=patient_reference,
         shifter_id=shifter_id,
-        experiment_id=experiment_id,
         directory_id=measuerement_directory_id
     )
 
@@ -132,7 +129,7 @@ def new_measurement(
             number_of_files=measurement_data.number_of_files,
             patient_reference=measurement_data.patient_reference,
             shifter_id=measurement_data.shifter_id,
-            experiment_id=measurement_data.experiment_id,
+            measuerement_directory_id=measurement_data.measurement_folder_id,
         )
         db.add(measurement)
         db.commit()
@@ -191,11 +188,10 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         "id": measurement.id,
         "name": measurement.name,
         "description": measurement.description,
-        "directory": measurement.directory,
+        "directory": measurement.directory_id,
         "number_of_files": measurement.number_of_files,
         "patient_reference": measurement.patient_reference,
         "shifter_id": measurement.shifter_id,
-        "experiment_id": measurement.experiment_id,
         "tags": measurement.tags,
         "radioisotopes": measurement.radioisotopes,
         "data_entry": measurement.data_entry,
@@ -398,7 +394,7 @@ def edit_measurement(
         measurement.number_of_files = measurement_data.number_of_files
         measurement.patient_reference = measurement_data.patient_reference
         measurement.shifter_id = measurement_data.shifter_id
-        measurement.experiment_id = measurement_data.experiment_id
+        measurement.measurement_folder_id = measurement_data.measurement_folder_id
 
         db.commit()
         db.refresh(measurement)

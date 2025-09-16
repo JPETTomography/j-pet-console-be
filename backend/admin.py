@@ -67,13 +67,17 @@ class MeasurementAdmin(ModelView, model=Measurement):
     column_list = [
         Measurement.name,
         Measurement.description,
-        "experiment.name",
+        "directory.experiment.name",
+        "directory.path",
     ]
-    column_labels = {"experiment.name": "Experiment"}
+    column_labels = {
+        "directory.experiment.name": "Experiment",
+        "directory.path": "Directory",
+    }
     form_ajax_refs = {
-        "experiment": {
-            "fields": ("name",),
-            "order_by": "name",
+        "directory": {
+            "fields": ("path",),
+            "order_by": "path",
         },
     }
 
