@@ -10,6 +10,7 @@ import ButtonNew from "../partials/ButtonNew";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageDetectors } from "../../utils/permissions";
 
 const DetectorsList = () => {
   const navigate = useNavigate();
@@ -52,7 +53,9 @@ const DetectorsList = () => {
           items={detectors}
           ItemComponent={DetectorCard}
           newButton={
-            <ButtonNew path="/detectors/new">Add new detector</ButtonNew>
+            canManageDetectors() ? (
+              <ButtonNew path="/detectors/new">Add new detector</ButtonNew>
+            ) : null
           }
         />
       )}

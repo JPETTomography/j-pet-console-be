@@ -10,6 +10,8 @@ import PaginatedItems from "../partials/PaginatedItems";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { handleApiError } from "../../utils/errorHandler";
+import { canManageUsers } from "../../utils/permissions";
 
 const UsersList = () => {
   const navigate = useNavigate();
@@ -26,11 +28,7 @@ const UsersList = () => {
       const response = await api.get("/users");
       setUsers(response.data);
     } catch (err) {
-      if (err.response?.status === 401) {
-        navigate("/");
-      } else {
-        setError(err.message);
-      }
+      handleApiError(err, navigate, setError);
     } finally {
       setLoading(false);
     }
@@ -51,7 +49,11 @@ const UsersList = () => {
         <PaginatedItems
           items={users}
           ItemComponent={UserCard}
-          newButton={<ButtonNew path="/users/new">Add new user</ButtonNew>}
+          newButton={
+            canManageUsers() ? (
+              <ButtonNew path="/users/new">Add new user</ButtonNew>
+            ) : null
+          }
         />
       )}
     </Page>

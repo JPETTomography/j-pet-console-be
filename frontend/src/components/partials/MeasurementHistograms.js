@@ -1,31 +1,42 @@
-import React, { useState } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import Plot from "react-plotly.js"
 import api from "../../api"
 
 const MeasurementHistograms = ({ measurement, referenceData = null }) => {
   const [displayMode, setDisplayMode] = useState("side-by-side")
-  const [startDateTime, setStartDateTime] = useState("")
-  const [endDateTime, setEndDateTime] = useState("")
+  
+  const getDefaultDateTimes = () => {
+    const now = new Date()
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    
+    const formatDateTime = (date) => {
+      return date.toISOString().slice(0, 16)
+    }
+    
+    return {
+      start: formatDateTime(yesterday),
+      end: formatDateTime(now)
+    }
+  }
+  
+  const defaultDates = getDefaultDateTimes()
+  const [startDateTime, setStartDateTime] = useState(defaultDates.start)
+  const [endDateTime, setEndDateTime] = useState(defaultDates.end)
   const [filteredData, setFilteredData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const fetchAggregatedData = async () => {
-    if (!startDateTime && !endDateTime) {
-      setError("Please select at least one date/time filter")
-      return
-    }
-
+  const fetchFilteredData = useCallback(async (startDate, endDate) => {
     setIsLoading(true)
     setError(null)
 
     try {
       const params = new URLSearchParams()
-      if (startDateTime) {
-        params.append("start_time", new Date(startDateTime).toISOString())
+      if (startDate) {
+        params.append("start_time", new Date(startDate).toISOString())
       }
-      if (endDateTime) {
-        params.append("end_time", new Date(endDateTime).toISOString())
+      if (endDate) {
+        params.append("end_time", new Date(endDate).toISOString())
       }
 
       const response = await api.get(
@@ -38,36 +49,44 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
     } finally {
       setIsLoading(false)
     }
+  }, [measurement?.id])
+
+  useEffect(() => {
+    if (measurement?.id) {
+      const defaultDates = getDefaultDateTimes()
+      fetchFilteredData(defaultDates.start, defaultDates.end)
+    }
+  }, [measurement?.id, fetchFilteredData])
+
+  const fetchAggregatedData = async () => {
+    await fetchFilteredData(startDateTime, endDateTime)
   }
 
-  // Clear filters
-  const clearFilters = () => {
+  const resetTo24h = () => {
+    const defaultDates = getDefaultDateTimes()
+    
+    setStartDateTime(defaultDates.start)
+    setEndDateTime(defaultDates.end)
+    setError(null)
+    
+    fetchFilteredData(defaultDates.start, defaultDates.end)
+  }
+
+  const showAllData = () => {
     setStartDateTime("")
     setEndDateTime("")
-    setFilteredData(null)
     setError(null)
+    fetchFilteredData("", "")
   }
 
   const getReferenceDataByIndex = (histogramIndex) => {
-    let referenceHistograms = []
+    if (!referenceData) return null
 
-    if (referenceData) {
-      if (referenceData.reference_plots) {
-        referenceHistograms = referenceData.reference_plots
-      } else if (referenceData.histogram) {
-        referenceHistograms = referenceData.histogram
-      }
-    }
-
+    const referenceHistograms = referenceData.reference_plots || referenceData.histogram
     if (!referenceHistograms || !Array.isArray(referenceHistograms)) return null
 
-    const refData = referenceHistograms[histogramIndex] || null
-    
-    if (refData) {
-      return normalizeHistogramData(refData)
-    }
-    
-    return refData
+    const refData = referenceHistograms[histogramIndex]
+    return refData ? normalizeHistogramData(refData) : null
   }
 
   const normalizeHistogramData = (histogram) => {
@@ -75,26 +94,18 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
     
     const normalized = { ...histogram }
     
+    // Normalize 2D content data
     if (normalized.content && Array.isArray(normalized.content) && normalized.content.length > 0) {
-      let maxValue = 0
-      
-      for (let i = 0; i < normalized.content.length; i++) {
-        if (Array.isArray(normalized.content[i])) {
-          for (let j = 0; j < normalized.content[i].length; j++) {
-            const val = normalized.content[i][j]
-            if (val != null && !isNaN(val) && val > maxValue) {
-              maxValue = val
-            }
-          }
-        }
-      }
+      const maxValue = Math.max(...normalized.content.flat().filter(val => val != null && !isNaN(val)))
       
       if (maxValue > 0) {
         normalized.content = normalized.content.map(row => 
           Array.isArray(row) ? row.map(val => (val || 0) / maxValue) : row
         )
       }
-    } else if (normalized.y && Array.isArray(normalized.y) && normalized.y.length > 0) {
+    }
+    // Normalize 1D y-axis data
+    else if (normalized.y && Array.isArray(normalized.y) && normalized.y.length > 0) {
       const maxValue = Math.max(...normalized.y.filter(val => val != null && !isNaN(val)))
       if (maxValue > 0) {
         normalized.y = normalized.y.map(val => (val || 0) / maxValue)
@@ -104,144 +115,8 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
     return normalized
   }
 
-  const aggregateLocalData = (measurement) => {
-    if (!measurement.data_entry || measurement.data_entry.length === 0) {
-      return null
-    }
-
-    if (measurement.data_entry.length === 1) {
-      const singleEntry = measurement.data_entry[0]
-      const normalizedHistograms = []
-      
-      if (singleEntry.data && Array.isArray(singleEntry.data)) {
-        for (let histIndex = 0; histIndex < singleEntry.data.length; histIndex++) {
-          const histogram = singleEntry.data[histIndex]
-          const normalizedHist = normalizeHistogramData(histogram)
-          normalizedHistograms.push(normalizedHist)
-        }
-      }
-      
-      return {
-        data_entry: [
-          {
-            ...singleEntry,
-            name: `${singleEntry.name} (1 data entry, normalized)`,
-            data: normalizedHistograms
-          }
-        ],
-        total_entries_aggregated: 1
-      }
-    }
-
-    const firstEntry = measurement.data_entry[0]
-    const aggregatedHistograms = []
-
-    if (firstEntry.data && Array.isArray(firstEntry.data)) {
-      for (let histIndex = 0; histIndex < firstEntry.data.length; histIndex++) {
-        const firstHist = firstEntry.data[histIndex]
-        const aggregatedHist = { ...firstHist }
-
-        // For 2D histograms (heatmaps), only normalize 'content', not 'y'
-        // For 1D histograms, only normalize 'y'
-        if (aggregatedHist.content && Array.isArray(aggregatedHist.content)) {
-          // This is a 2D histogram - sum and normalize content only
-          const aggregatedContent = aggregatedHist.content.map((row) => [
-            ...row
-          ])
-
-          for (
-            let entryIndex = 1;
-            entryIndex < measurement.data_entry.length;
-            entryIndex++
-          ) {
-            const entry = measurement.data_entry[entryIndex]
-            if (
-              entry.data &&
-              entry.data[histIndex] &&
-              entry.data[histIndex].content
-            ) {
-              for (let i = 0; i < aggregatedContent.length; i++) {
-                for (let j = 0; j < aggregatedContent[i].length; j++) {
-                  aggregatedContent[i][j] +=
-                    entry.data[histIndex].content[i][j] || 0
-                }
-              }
-            }
-          }
-          let maxValue = 0
-          for (let i = 0; i < aggregatedContent.length; i++) {
-            for (let j = 0; j < aggregatedContent[i].length; j++) {
-              const val = aggregatedContent[i][j]
-              if (val != null && !isNaN(val) && val > maxValue) {
-                maxValue = val
-              }
-            }
-          }
-          
-          if (maxValue > 0) {
-            aggregatedHist.content = aggregatedContent.map((row) =>
-              row.map((val) => (val || 0) / maxValue)
-            )
-          } else {
-            aggregatedHist.content = aggregatedContent
-          }
-          
-        } else if (aggregatedHist.y && Array.isArray(aggregatedHist.y)) {
-
-          const aggregatedY = [...aggregatedHist.y]
-
-          for (
-            let entryIndex = 1;
-            entryIndex < measurement.data_entry.length;
-            entryIndex++
-          ) {
-            const entry = measurement.data_entry[entryIndex]
-            if (
-              entry.data &&
-              entry.data[histIndex] &&
-              entry.data[histIndex].y
-            ) {
-              for (let i = 0; i < aggregatedY.length; i++) {
-                aggregatedY[i] += entry.data[histIndex].y[i] || 0
-              }
-            }
-          }
-          const maxValue = Math.max(...aggregatedY.filter(val => val != null && !isNaN(val)))
-          if (maxValue > 0) {
-            aggregatedHist.y = aggregatedY.map(val => (val || 0) / maxValue)
-          } else {
-            aggregatedHist.y = aggregatedY
-          }
-        }
-
-        if (aggregatedHist.name || aggregatedHist.Title) {
-          const originalName = aggregatedHist.name || aggregatedHist.Title
-          aggregatedHist.name = originalName
-          aggregatedHist.Title = `Normalized ${originalName}`
-        }
-
-        aggregatedHistograms.push(aggregatedHist)
-      }
-    }
-
-    return {
-      data_entry: [
-        {
-          id: "normalized_all",
-          name: `All Data Normalized (${measurement.data_entry.length} data entries)`,
-          data: aggregatedHistograms,
-          acquisition_date: firstEntry.acquisition_date,
-          measurement_id: measurement.id,
-          histo_dir: firstEntry.histo_dir
-        }
-      ],
-      total_entries_aggregated: measurement.data_entry.length
-    }
-  }
-
   const getDisplayData = () => {
     if (filteredData) {
-      // Backend returns aggregated but not normalized data, so we need to normalize it
       const normalizedFilteredData = {
         ...filteredData,
         data_entry: filteredData.data_entry.map(entry => ({
@@ -251,7 +126,7 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
       }
       return normalizedFilteredData
     }
-    return aggregateLocalData(measurement)
+    return null
   }
 
   const displayData = getDisplayData()
@@ -264,10 +139,12 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Date/Time Filter UI */}
       <div className="bg-white p-6 shadow rounded mb-6">
         <h3 className="text-lg font-semibold mb-4">
           Filter Histograms by Date/Time
+          <span className="text-sm text-gray-500 block font-normal">
+            {filteredData ? `Showing filtered data (${startDateTime || 'start'} to ${endDateTime || 'end'})` : 'Showing all available data'}
+          </span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -300,17 +177,24 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
           <div className="flex gap-2">
             <button
               onClick={fetchAggregatedData}
-              disabled={isLoading || (!startDateTime && !endDateTime)}
+              disabled={isLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? "Loading..." : "Apply Filter"}
+              {isLoading ? "Loading..." : "Apply Date Filter"}
             </button>
 
             <button
-              onClick={clearFilters}
+              onClick={resetTo24h}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
             >
-              Clear Filters
+              Reset to Last 24h
+            </button>
+
+            <button
+              onClick={showAllData}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Show All Data
             </button>
           </div>
 
@@ -341,7 +225,6 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
         )}
       </div>
 
-      {/* Always display aggregated data */}
       {displayData &&
       displayData.data_entry &&
       displayData.data_entry.length > 0 ? (
@@ -353,10 +236,6 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
             <div key={entryIndex} className="flex flex-col gap-4">
               <h2 className="text-lg font-bold text-center">
                 {de.name}
-                <span className="text-sm text-gray-600 block">
-                  (Aggregated from {displayData.total_entries_aggregated || 1}{" "}
-                  data entries)
-                </span>
               </h2>
               {histograms.map((histogram, histoIndex) => {
                 const type = histogram.histo_type
@@ -365,23 +244,12 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
                 const referenceDataForHisto =
                   getReferenceDataByIndex(histoIndex)
 
-                let gridCols
-                if (!hasAnyReferenceData) {
-                  gridCols = "lg:grid-cols-12"
-                } else if (displayMode === "overlay") {
-                  gridCols = "lg:grid-cols-12"
-                } else {
-                  gridCols = "lg:grid-cols-12"
-                }
-
                 return (
                   <div
                     key={`${entryIndex}-${histoIndex}`}
                     className="bg-white p-6 shadow rounded"
                   >
-                    <div
-                      className={`grid grid-cols-1 ${gridCols} gap-6 items-start`}
-                    >
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                       <div className="lg:col-span-4">
                         <h3 className="font-semibold text-lg mb-3">
                           {histogram.Title || `Histogram ${histoIndex + 1}`}
@@ -560,8 +428,8 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
             <p className="text-gray-500 text-lg">No histogram data available</p>
             <p className="text-gray-400 text-sm mt-2">
               {startDateTime || endDateTime
-                ? "No data found for the selected date/time range. Try adjusting your filters or clearing them to see all available data."
-                : "No data entries found for this measurement."}
+                ? "No data found for the selected date/time range. Try adjusting your date filters or resetting to the last 24 hours."
+                : "No histogram data found for this measurement."}
             </p>
           </div>
         </div>
@@ -570,13 +438,33 @@ const MeasurementHistograms = ({ measurement, referenceData = null }) => {
   )
 }
 
+const PlotErrorFallback = ({ message = "Plot data not available" }) => (
+  <div className="w-full flex-1 bg-gray-100 rounded flex items-center justify-center min-h-[250px]">
+    <p className="text-gray-500 text-sm">{message}</p>
+  </div>
+)
+
+const getBaseLayout = (title, rightMargin = 20) => ({
+  height: 250,
+  margin: { t: 30, l: 40, r: rightMargin, b: 40 },
+  title: { text: title, font: { size: 12 } },
+  xaxis: {
+    title: { text: "X Axis", font: { size: 10 } },
+    tickfont: { size: 8 }
+  },
+  yaxis: {
+    title: { text: "Y Axis", font: { size: 10 } },
+    tickfont: { size: 8 }
+  },
+  font: { size: 10 }
+})
+
+const plotConfig = { responsive: true, displayModeBar: true, displaylogo: false }
+const plotStyle = { width: "100%", height: "100%" }
+
 const TH1DPlot = ({ x, y, title = "Data", color = "blue" }) => {
   if (!x || !y || !Array.isArray(x) || !Array.isArray(y)) {
-    return (
-      <div className="w-full flex-1 bg-gray-100 rounded flex items-center justify-center min-h-[250px]">
-        <p className="text-gray-500 text-sm">Plot data not available</p>
-      </div>
-    )
+    return <PlotErrorFallback />
   }
 
   return (
@@ -594,42 +482,20 @@ const TH1DPlot = ({ x, y, title = "Data", color = "blue" }) => {
         }
       ]}
       layout={{
-        height: 250,
-        margin: { t: 30, l: 40, r: 20, b: 40 },
-        title: { text: title, font: { size: 12 } },
-        xaxis: {
-          title: { text: "X Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        yaxis: {
-          title: { text: "Y Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        font: { size: 10 },
+        ...getBaseLayout(title),
         showlegend: false,
         bargap: 0.1
       }}
-      config={{ responsive: true, displayModeBar: true, displaylogo: false }}
+      config={plotConfig}
       useResizeHandler={true}
-      style={{ width: "100%", height: "100%" }}
+      style={plotStyle}
     />
   )
 }
 
 const TH2DPlot = ({ x, y, z, title = "Data" }) => {
-  if (
-    !x ||
-    !y ||
-    !z ||
-    !Array.isArray(x) ||
-    !Array.isArray(y) ||
-    !Array.isArray(z)
-  ) {
-    return (
-      <div className="w-full flex-1 bg-gray-100 rounded flex items-center justify-center min-h-[250px]">
-        <p className="text-gray-500 text-sm">Plot data not available</p>
-      </div>
-    )
+  if (!x || !y || !z || !Array.isArray(x) || !Array.isArray(y) || !Array.isArray(z)) {
+    return <PlotErrorFallback />
   }
 
   return (
@@ -645,43 +511,19 @@ const TH2DPlot = ({ x, y, z, title = "Data" }) => {
           name: title
         }
       ]}
-      layout={{
-        height: 250,
-        margin: { t: 30, l: 40, r: 20, b: 40 },
-        title: { text: title, font: { size: 12 } },
-        xaxis: {
-          title: { text: "X Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        yaxis: {
-          title: { text: "Y Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        font: { size: 10 }
-      }}
-      config={{ responsive: true, displayModeBar: true, displaylogo: false }}
+      layout={getBaseLayout(title)}
+      config={plotConfig}
       useResizeHandler={true}
-      style={{ width: "100%", height: "100%" }}
+      style={plotStyle}
     />
   )
 }
 
 const TH1DOverlayPlot = ({ currentData, referenceData }) => {
-  if (
-    !currentData?.x ||
-    !currentData?.y ||
-    !referenceData?.x ||
-    !referenceData?.y ||
-    !Array.isArray(currentData.x) ||
-    !Array.isArray(currentData.y) ||
-    !Array.isArray(referenceData.x) ||
-    !Array.isArray(referenceData.y)
-  ) {
-    return (
-      <div className="w-full flex-1 bg-gray-100 rounded flex items-center justify-center min-h-[250px]">
-        <p className="text-gray-500 text-sm">Overlay data not available</p>
-      </div>
-    )
+  const isValidData = (data) => data?.x && data?.y && Array.isArray(data.x) && Array.isArray(data.y)
+  
+  if (!isValidData(currentData) || !isValidData(referenceData)) {
+    return <PlotErrorFallback message="Overlay data not available" />
   }
 
   return (
@@ -711,18 +553,7 @@ const TH1DOverlayPlot = ({ currentData, referenceData }) => {
         }
       ]}
       layout={{
-        height: 250,
-        margin: { t: 30, l: 40, r: 20, b: 40 },
-        title: { text: "Overlay", font: { size: 12 } },
-        xaxis: {
-          title: { text: "X Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        yaxis: {
-          title: { text: "Y Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        font: { size: 10 },
+        ...getBaseLayout("Overlay"),
         barmode: "overlay",
         bargap: 0.1,
         legend: {
@@ -732,25 +563,16 @@ const TH1DOverlayPlot = ({ currentData, referenceData }) => {
           font: { size: 8 }
         }
       }}
-      config={{ responsive: true, displayModeBar: true, displaylogo: false }}
+      config={plotConfig}
       useResizeHandler={true}
-      style={{ width: "100%", height: "100%" }}
+      style={plotStyle}
     />
   )
 }
 
 const TH2DComparisonPlot = ({ currentData, referenceData }) => {
-  if (
-    !currentData?.z ||
-    !referenceData?.z ||
-    !Array.isArray(currentData.z) ||
-    !Array.isArray(referenceData.z)
-  ) {
-    return (
-      <div className="w-full flex-1 bg-gray-100 rounded flex items-center justify-center min-h-[250px]">
-        <p className="text-gray-500 text-sm">Comparison data not available</p>
-      </div>
-    )
+  if (!currentData?.z || !referenceData?.z || !Array.isArray(currentData.z) || !Array.isArray(referenceData.z)) {
+    return <PlotErrorFallback message="Comparison data not available" />
   }
 
   const diffZ = currentData.z.map((row, i) => {
@@ -782,23 +604,10 @@ const TH2DComparisonPlot = ({ currentData, referenceData }) => {
           }
         }
       ]}
-      layout={{
-        height: 250,
-        margin: { t: 30, l: 40, r: 60, b: 40 },
-        title: { text: "Difference", font: { size: 12 } },
-        xaxis: {
-          title: { text: "X Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        yaxis: {
-          title: { text: "Y Axis", font: { size: 10 } },
-          tickfont: { size: 8 }
-        },
-        font: { size: 10 }
-      }}
-      config={{ responsive: true, displayModeBar: true, displaylogo: false }}
+      layout={getBaseLayout("Difference", 60)}
+      config={plotConfig}
       useResizeHandler={true}
-      style={{ width: "100%", height: "100%" }}
+      style={plotStyle}
     />
   )
 }

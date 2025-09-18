@@ -10,6 +10,7 @@ import ButtonNew from "../partials/ButtonNew";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageRadioisotopes } from "../../utils/permissions";
 
 const RadioisotopesList = () => {
   const navigate = useNavigate();
@@ -52,9 +53,11 @@ const RadioisotopesList = () => {
           items={radioisotopes}
           ItemComponent={RadioisotopeCard}
           newButton={
-            <ButtonNew path="/radioisotopes/new">
-              Add new radioisotope
-            </ButtonNew>
+            canManageRadioisotopes() ? (
+              <ButtonNew path="/radioisotopes/new">
+                Add new radioisotope
+              </ButtonNew>
+            ) : null
           }
         />
       )}

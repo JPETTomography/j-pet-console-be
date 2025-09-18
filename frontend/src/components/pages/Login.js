@@ -2,6 +2,7 @@ import { CONTACT_MAIL } from "../../const";
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearUserCache } from "../../utils/permissions";
 
 import Form from "../partials/Form";
 import InputPassword from "../partials/Input/InputPassword";
@@ -50,6 +51,7 @@ const Login = () => {
         const data = await response.json();
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        clearUserCache(); // Clear permission cache when user logs in
         setLoading(false);
         navigate("/experiments");
       }

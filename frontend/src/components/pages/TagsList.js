@@ -9,6 +9,7 @@ import ButtonNew from "../partials/ButtonNew";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageTags } from "../../utils/permissions";
 
 const TagsList = () => {
   const navigate = useNavigate();
@@ -49,7 +50,11 @@ const TagsList = () => {
         <PaginatedItems
           items={tags}
           ItemComponent={TagCard}
-          newButton={<ButtonNew path="/tags/new">Add new tag</ButtonNew>}
+          newButton={
+            canManageTags() ? (
+              <ButtonNew path="/tags/new">Add new tag</ButtonNew>
+            ) : null
+          }
         />
       )}
     </Page>

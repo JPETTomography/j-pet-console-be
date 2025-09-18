@@ -14,6 +14,7 @@ import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 
 import api from "../../api";
+import { canManageDetectors } from "../../utils/permissions";
 
 const Detector = () => {
   const navigate = useNavigate();
@@ -67,7 +68,9 @@ const Detector = () => {
                 <Svg src="/icons/globe-europe-africa.svg" className="w-6 h-6" />
                 {detector.agent_code}
               </div>
-              <ButtonEdit path={`/detectors/${detector.id}/edit`} />
+              {canManageDetectors() && (
+                <ButtonEdit path={`/detectors/${detector.id}/edit`} />
+              )}
             </div>
           </div>
         </>

@@ -17,6 +17,7 @@ import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import MeasurementsList from "../partials/MeasurementsList";
 import api from "../../api";
+import { canManageExperiments } from "../../utils/permissions";
 
 const Experiment = () => {
   const navigate = useNavigate();
@@ -88,7 +89,9 @@ const Experiment = () => {
                 </div>
               </div>
               <ButtonGroup>
-                <ButtonEdit path={`/experiments/${experiment.id}/edit`} />
+                {canManageExperiments() && (
+                  <ButtonEdit path={`/experiments/${experiment.id}/edit`} />
+                )}
               </ButtonGroup>
             </div>
           </div>
