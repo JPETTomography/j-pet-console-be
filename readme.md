@@ -71,6 +71,10 @@ Inside the `frontend/` folder:
 docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 
+## Optional configuration
+
+You can use requirements-dev.txt to install usefil dependencies for LSP, like isort and black.
+
 # Demo step by step
 
 1. Download the repo
