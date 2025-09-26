@@ -24,6 +24,12 @@ class UserBase(BaseModel):
     role: Optional[str] = Field(None, example="shifter")
 
 
+class UserEdit(BaseModel):
+    name: str = Field(..., example="John Doe")
+    email: EmailStr = Field(..., example="john.doe@example.com")
+    role: Optional[str] = Field(None, example="shifter")
+
+
 def generate_fake_user(db: Session = None):
     while True:
         yield models.User(
@@ -88,7 +94,7 @@ def read_user(id: str, db: Session = Depends(get_session_local)):
 
 @router.patch("/{id}/edit")
 def edit_user(
-    id: str, user_data: UserBase, db: Session = Depends(get_session_local)
+    id: str, user_data: UserEdit, db: Session = Depends(get_session_local)
 ):
     try:
         user = db.query(models.User).filter(models.User.id == id).first()

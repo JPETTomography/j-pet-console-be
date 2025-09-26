@@ -10,9 +10,11 @@ import ButtonNew from "../partials/ButtonNew";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const ExperimentsList = () => {
   const navigate = useNavigate();
+  const { canManageExperiments } = usePermissions(); // Optimized permission check
 
   const [experiments, setExperiments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,9 @@ const ExperimentsList = () => {
           items={experiments}
           ItemComponent={ExperimentCard}
           newButton={
-            <ButtonNew path="/experiments/new">Add new experiment</ButtonNew>
+            canManageExperiments ? (
+              <ButtonNew path="/experiments/new">Add new experiment</ButtonNew>
+            ) : null
           }
         />
       )}

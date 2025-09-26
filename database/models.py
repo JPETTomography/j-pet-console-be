@@ -198,6 +198,7 @@ class Measurement(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+    directory = Column(String, nullable=False)
     number_of_files = Column(Integer, nullable=False)
     patient_reference = Column(String, nullable=False)
     created_at = Column(
@@ -219,7 +220,6 @@ class Measurement(Base):
         secondary="radioisotope_measurement",
         back_populates="measurements",
     )
-
     data_entry = relationship("DataEntry", back_populates="measurement")
     meteo_readouts = relationship("MeteoReadout", back_populates="measurement")
     comments = relationship("Comment", back_populates="measurement")

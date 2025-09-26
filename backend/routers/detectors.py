@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 import database.models as models
-from backend.auth import get_current_user
+from backend.auth import Role, get_current_user, get_current_user_with_role
 from backend.routers.common import generate_models
 from database.database import get_session_local
 
@@ -41,11 +41,39 @@ def read_detector(id: str, db: Session = Depends(get_session_local)):
     return detector
 
 
+@router.post("/new")
+def create_detector(
+    detector_data: DetectorBase,
+    db: Session = Depends(get_session_local),
+    current_user=Depends(get_current_user_with_role(Role.COORDINATOR)),
+):
+    try:
+        detector = models.Detector(
+            name=detector_data.name,
+            description=detector_data.description,
+            status=detector_data.status,
+            agent_code=detector_data.agent_code,
+        )
+        db.add(detector)
+        db.commit()
+        db.refresh(detector)
+        return {
+            "message": "Detector successfully created",
+            "detector": detector,
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create detector: {str(e)}"
+        )
+
+
 @router.patch("/{id}/edit")
 def edit_detector(
     id: str,
     detector_data: DetectorBase,
     db: Session = Depends(get_session_local),
+    current_user=Depends(get_current_user_with_role(Role.COORDINATOR)),
 ):
     try:
         detector = (

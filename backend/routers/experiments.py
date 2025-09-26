@@ -188,6 +188,16 @@ def read_experiment_measurements(
     page: int = Query(1, ge=1),
     size: int = Query(10, le=10),
 ):
+    # First check if experiment exists
+    experiment = (
+        db.query(models.Experiment).filter(models.Experiment.id == id).first()
+    )
+    if not experiment:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Experiment with id: {id} not found",
+        )
+
     offset = (page - 1) * size
     measurements = db.query(models.Measurement).join(
         models.MeasurementDirectory
@@ -200,11 +210,8 @@ def read_experiment_measurements(
         .offset(offset)
         .all()
     )
-    if not measurements:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No measurements found for experiment with id: {id}",
-        )
+
+    # Return empty list if no measurements found, don't raise 404
     return measurements
 
 

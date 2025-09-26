@@ -11,6 +11,7 @@ import ButtonEdit from "../partials/ButtonEdit";
 import FetchLoading from "../partials/FetchLoading";
 import FetchError from "../partials/FetchError";
 import api from "../../api";
+import { canManageRadioisotopes } from "../../utils/permissions";
 
 const Radioisotope = () => {
   const navigate = useNavigate();
@@ -68,7 +69,9 @@ const Radioisotope = () => {
                   {radioisotope.halflife}
                 </div>
               </div>
-              <ButtonEdit path={`/radioisotopes/${radioisotope.id}/edit`} />
+              {canManageRadioisotopes() && (
+                <ButtonEdit path={`/radioisotopes/${radioisotope.id}/edit`} />
+              )}
             </div>
           </div>
         </>

@@ -18,6 +18,7 @@ import ButtonEdit from "../partials/ButtonEdit"
 import FetchLoading from "../partials/FetchLoading"
 import FetchError from "../partials/FetchError"
 import api from "../../api"
+import { canManageMeasurements } from "../../utils/permissions";
 
 const Measurement = () => {
   const navigate = useNavigate()
@@ -111,9 +112,11 @@ const Measurement = () => {
                     ))}
                   </ul>
                   <ButtonGroup>
-                    <ButtonEdit
-                      path={`/experiments/${measurement.experiment_id}/measurements/${measurement.id}/edit`}
-                    />
+                    {canManageMeasurements() && (
+                      <ButtonEdit
+                        path={`/experiments/${measurement.experiment_id}/measurements/${measurement.id}/edit`}
+                      />
+                    )}
                   </ButtonGroup>
                 </div>
               </div>

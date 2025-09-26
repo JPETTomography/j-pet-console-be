@@ -1,4 +1,4 @@
-import random
+import json
 
 import faker
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,8 +15,16 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 def generate_fake_data_entry(db: Session = None):
+    json_path = "backend/fake_data/example_data.json"
+
+    try:
+        with open(json_path, "r") as f:
+            json_data = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        json_data = None
+
     while True:
-        yield dict(
+        entry = dict(
             name=generator.catch_phrase(),
             histo_dir="/".join(
                 [generator.catch_phrase().partition(" ")[0] for _ in range(2)]
@@ -26,6 +34,11 @@ def generate_fake_data_entry(db: Session = None):
             ),
             measurement_id=get_random_measurement(db).id,
         )
+
+        if json_data:
+            entry["data"] = json_data["histogram"]
+
+        yield entry
 
 
 @router.get("/")
