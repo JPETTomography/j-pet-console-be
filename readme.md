@@ -75,6 +75,17 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 
 You can use requirements-dev.txt to install usefil dependencies for LSP, like isort and black.
 
+## Adminer
+
+This is an alternative application to `/admin` for browsing the database and should only be run in dev environments.
+With a database running, inside the `database/` folder, run:
+
+```
+docker compose -f docker-compose.local.yml up --build
+```
+
+Open [this page](http://localhost:5430/?pgsql=postgres_db%3A5432&username=user&db=mydatabase) to view the application.
+
 # Demo step by step
 
 1. Download the repo
