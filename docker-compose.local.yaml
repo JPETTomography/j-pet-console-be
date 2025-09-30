@@ -5,3 +5,4 @@ services:
   worker:
     volumes:
       - .:/app
+      - ./error_dumps:/failed_dumps

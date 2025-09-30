@@ -74,6 +74,8 @@ services:
       - web
     environment:
       - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - failed-dumps:/failed_dumps
     networks:
       - my_network
 
@@ -85,3 +87,4 @@ networks:
 volumes:
   pictures-data:
   postgres-data:
+  failed-dumps:

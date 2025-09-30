@@ -5,6 +5,7 @@ import re
 import socket
 from datetime import datetime
 from pathlib import Path
+import traceback
 
 import pika
 from loguru import logger
@@ -147,6 +148,12 @@ def save_folder_info_to_db(
                     )
                     logger.info(f"Creating entry: {measurement_dir}")
                     session.add(measurement_dir)
+                    session.flush()  # Flush to get the measurement_dir.id
+                    default_measurement = Measurement(
+                        name=f"Default measurement for directory {path}",
+                        directory_id=measurement_dir.id
+                    )
+                    session.add(default_measurement)
                 session.commit()
             case "deleted":
                 measurement_dir = (
@@ -187,18 +194,19 @@ def save_data_entry_to_db(json_data, agent_code):
 
     # @TODO this will need to change based on the directory which
     # the event comes from
-    #
+    measurement_dir_path = str(Path(filename).parent)
+    logger.info(f"Measurement dir path {measurement_dir_path}")
     measurement_dir = (
         session.query(MeasurementDirectory)
-        .filter(MeasurementDirectory.path == str(Path(filename).parent))
+        .filter(MeasurementDirectory.path == measurement_dir_path)
         .first()
     )
-    measurement_match = session.query(Measurement).filter(
-        Measurement.experiment_id == experiment.id
-    )
-    measurement = measurement_match.order_by(
-        desc(Measurement.created_at)
+    measurement = session.query(Measurement).filter(
+        Measurement.directory_id == measurement_dir.id
     ).first()
+    # measurement = measurement_match.order_by(
+    #     desc(Measurement.created_at)
+    # ).first()
     if not measurement:
         logger.error(
             f"No measurement found for experiment_id: {experiment.id}"
@@ -228,11 +236,11 @@ def callback(ch, method, properties, body):
     json_payload = json.loads(body.decode())
     agent_code = json_payload["agent_code"]
     logger.info(f"Received message {json_payload}")
+    agent_code = json_payload["agent_code"]
     match json_payload["message_type"]:
         case "connection_info":
             connection_data = json_payload["data"]
             address, port = connection_data["ip"], connection_data["port"]
-            agent_code = connection_data["agent_code"]
             logger.info(
                 f"Received producer IP and port info: {connection_data}"
             )
@@ -245,7 +253,34 @@ def callback(ch, method, properties, body):
             except socket.timeout:
                 logger.error("No data received within 15 seconds. Exiting.")
             else:
-                save_data_entry_to_db(json_data, agent_code)
+                try:
+                    save_data_entry_to_db(json_data, agent_code)
+                except Exception as e:
+                    failed_dumps_dir = Path("/failed_dumps")
+                    failed_dumps_dir.mkdir(exist_ok=True)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+                    json_filename = f"{agent_code}_{timestamp}.json"
+                    error_filename = f"{agent_code}_{timestamp}.error"
+                    json_filepath = failed_dumps_dir / json_filename
+                    error_filepath = failed_dumps_dir / error_filename
+                    try:
+                        with open(json_filepath, 'w') as f:
+                            json.dump(json_data, f, indent=2)
+                        with open(error_filepath, 'w') as f:
+                            f.write(traceback.format_exc())
+                        logger.error(f"Failed to save data to DB. JSON dumped to: {json_filepath}")
+                    except Exception as dump_error:
+                        logger.error(f"Failed to dump JSON to file {json_filepath}: {dump_error}")
+                        logger.error("=====ARGS=====")
+                        logger.error(f"AGENT_CODE: {agent_code}")
+                        logger.error("")
+                        logger.error(f"JSON_DATA: {json_data}")
+                        logger.error("-----ERROR-----")
+                        logger.error(f"Found error: {e}")
+                        logger.error("==============")
+
+                    logger.error(f"Database save error: {e}")
+                    raise
             finally:
                 ch.basic_ack(delivery_tag=method.delivery_tag)
             logger.info("DONE!")

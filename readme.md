@@ -79,20 +79,22 @@ You can use requirements-dev.txt to install usefil dependencies for LSP, like is
 
 1. Download the repo
 2. Download the git submodule using
-3. Download data. Use `common/data_helpers/download_data.sh` to download exemplary files to `examplary_data_hold` folder and copy `histo_description.json` to `examplary_data`
-
 ```
 git submodule init
 git submodule update --remote --recursive
 
 ```
 
-4. Run backend
+3. Download data. Use `common/data_helpers/download_data.sh` to download exemplary files to `examplary_data_hold` 
 
+
+4. Run backend
 
 ```
 docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
 ```
+
+(the build option is only needed for building, if you want to restart you dont need this option)
 
 5. Run frontend
 
@@ -101,15 +103,16 @@ cd j-pet-console-fe
 docker compose -f docker-compose.yml up --build
 ```
 
-6. Run Agent
+6. Run Agent 
 
 ```
 cd agent
 cp examplary_config.yaml config.yaml
 docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
-
 ```
 
-6. Open http://localhost:8000/docs and trigger `seed`
-7. Wait untill all of the services are up
-8. Copy any .root file from `examplary_data_hold` to `examplary_data` - this will trigger root conversion and upload
+7. Open http://localhost:8000/docs and trigger `seed_with_fake_data` - if the opoeration is successfull you can check http://localhost:8000/admin to see if the objects were created
+8. Try logging in http://localhost:3000 with default credentials (`admin@gmail.com` and `admin` pwd)
+9. create a new directory in `examplary_data` e.g. `new_dir`
+10. Copy any .root file from `examplary_data_hold` to `examplary_data/new_dir` - this will trigger root conversion and upload
+

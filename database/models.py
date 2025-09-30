@@ -197,10 +197,9 @@ class Measurement(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    directory = Column(String, nullable=False)
-    number_of_files = Column(Integer, nullable=False)
-    patient_reference = Column(String, nullable=False)
+    description = Column(String)
+    number_of_files = Column(Integer)
+    patient_reference = Column(String)
     created_at = Column(
         TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
     )
@@ -210,7 +209,7 @@ class Measurement(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    shifter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    shifter_id = Column(Integer, ForeignKey("users.id"))
     shifter = relationship("User", back_populates="measurements")
     tags = relationship(
         "Tag", secondary="tag_measurement", back_populates="measurements"
