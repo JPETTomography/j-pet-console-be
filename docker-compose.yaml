@@ -1,4 +1,16 @@
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    command: alembic upgrade head
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    restart: "no"
+
   web:
     build:
       context: .
@@ -7,8 +19,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - rabbitmq
+      migrate:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
     environment:
       RABBITMQ_HOST: "rabbitmq"
       CORS_ORIGIN: "${CORS_ORIGIN:-localhost:3000}"
@@ -32,6 +46,11 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - my_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydatabase"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -55,6 +74,8 @@ services:
       - web
     environment:
       - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - failed-dumps:/failed_dumps
     networks:
       - my_network
 
@@ -66,3 +87,4 @@ networks:
 volumes:
   pictures-data:
   postgres-data:
+  failed-dumps:

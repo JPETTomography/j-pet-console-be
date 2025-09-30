@@ -16,6 +16,7 @@ from backend.admin import (
     DetectorAdmin,
     ExperimentAdmin,
     MeasurementAdmin,
+    MeasurementDirectoryAdmin,
     MeteoReadoutAdmin,
     RadioisotopeAdmin,
     TagAdmin,
@@ -31,6 +32,7 @@ from backend.routers import (
     data_entry,
     detectors,
     experiments,
+    measurement_directories,
     measurements,
     meteo_readouts,
     radioisotopes,
@@ -107,10 +109,11 @@ admin.add_view(ExperimentAdmin)
 admin.add_view(TagAdmin)
 admin.add_view(RadioisotopeAdmin)
 admin.add_view(MeasurementAdmin)
+admin.add_view(MeasurementDirectoryAdmin)
 admin.add_view(DataEntryAdmin)
 admin.add_view(MeteoReadoutAdmin)
 
-models.Base.metadata.create_all(bind=database.engine)
+# models.Base.metadata.create_all(bind=database.engine)
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 app.mount(
@@ -160,6 +163,7 @@ def seed_random(db: Session = Depends(get_session_local), amount: int = 10):
     experiments.create_sample_experiments(db, amount)
     tags.create_sample_tags(db, amount)
     radioisotopes.create_sample_radioisotopes(db, amount)
+    measurement_directories.create_sample_measurement_directories
     measurements.create_sample_measurements(db, amount)
     data_entry.create_sample_data_entries(db, amount)
     meteo_readouts.create_sample_meteo_readouts(db, amount)
@@ -177,6 +181,7 @@ def seed(db: Session = Depends(get_session_local), amount: int = 3):
     experiments.create_sample_experiments(
         db, fake_data=fake_data["Experiment"]
     )
+    measurement_directories.create_sample_measurement_directories(db, amount=2)
     tags.create_sample_tags(db, fake_data=fake_data["Tag"])
     radioisotopes.create_sample_radioisotopes(
         db, fake_data=fake_data["Radioisotope"]
