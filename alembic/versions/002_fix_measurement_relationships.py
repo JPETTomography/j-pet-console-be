@@ -58,7 +58,9 @@ def upgrade() -> None:
 
     # For each measurement without a directory, create or find appropriate directory
     for measurement_id, experiment_id in measurements_without_dirs:
-        directory_path = f"/measurement_directory_for_experiment_{experiment_id}/"
+        directory_path = (
+            f"/measurement_directory_for_experiment_{experiment_id}/"
+        )
 
         # Check if directory already exists for this experiment
         existing_dir = connection.execute(
@@ -68,7 +70,7 @@ def upgrade() -> None:
                 WHERE path = :path
                 """
             ),
-            {"path": directory_path}
+            {"path": directory_path},
         ).fetchone()
 
         if existing_dir:
@@ -77,11 +79,13 @@ def upgrade() -> None:
         else:
             # Create new directory
             result = connection.execute(
-                measurement_directory_table.insert().values(
+                measurement_directory_table.insert()
+                .values(
                     path=directory_path,
                     available=True,
                     experiment_id=experiment_id,
-                ).returning(measurement_directory_table.c.id)
+                )
+                .returning(measurement_directory_table.c.id)
             )
             directory_id = result.fetchone()[0]
 
@@ -94,14 +98,16 @@ def upgrade() -> None:
                 WHERE id = :measurement_id
                 """
             ),
-            {"directory_id": directory_id, "measurement_id": measurement_id}
+            {"directory_id": directory_id, "measurement_id": measurement_id},
         )
 
     # Now remove experiment_id from measurements table since all measurements
     # can access experiment through directory.experiment
 
     # Drop foreign key constraint first
-    op.drop_constraint("measurements_experiment_id_fkey", "measurements", type_="foreignkey")
+    op.drop_constraint(
+        "measurements_experiment_id_fkey", "measurements", type_="foreignkey"
+    )
 
     # Drop the experiment_id column
     op.drop_column("measurements", "experiment_id")
@@ -110,8 +116,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Add experiment_id column back to measurements
     op.add_column(
-        "measurements",
-        sa.Column("experiment_id", sa.Integer(), nullable=True)
+        "measurements", sa.Column("experiment_id", sa.Integer(), nullable=True)
     )
 
     # Get connection to restore data
@@ -140,8 +145,12 @@ def downgrade() -> None:
         "measurements",
         "experiments",
         ["experiment_id"],
-        ["id"]
+        ["id"],
     )
 
     # Remove unique constraint from measurement_directory.path
-    op.drop_constraint("uq_measurement_directory_path", "measurement_directory", type_="unique")
+    op.drop_constraint(
+        "uq_measurement_directory_path",
+        "measurement_directory",
+        type_="unique",
+    )

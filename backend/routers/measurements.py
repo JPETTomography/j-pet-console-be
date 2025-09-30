@@ -22,10 +22,10 @@ import database.models as models
 from backend.auth import Role, get_current_user, get_current_user_with_role
 from backend.routers.common import generate_models
 from backend.utills.utills import (
+    get_random_measurement_directory,
     get_random_radioisotopes,
     get_random_tags,
     get_random_user,
-    get_random_measurement_directory
 )
 from database.database import get_session_local
 
@@ -68,12 +68,16 @@ class CommentResponse(BaseModel):
 
 
 def generate_fake_measurement(db: Session = None):
-    all_measurement_directory = db.query(models.MeasurementDirectory.id).order_by(func.random())
+    all_measurement_directory = db.query(
+        models.MeasurementDirectory.id
+    ).order_by(func.random())
     measurement_directory_list = [dir.id for dir in all_measurement_directory]
     measurement_directory_list_size = len(measurement_directory_list)
     i = 0
     while True:
-        measurement_directory_id = measurement_directory_list[i % measurement_directory_list_size]
+        measurement_directory_id = measurement_directory_list[
+            i % measurement_directory_list_size
+        ]
         yield dict(
             name=generator.catch_phrase(),
             description=generator.text(max_nb_chars=200),
@@ -106,7 +110,7 @@ def generate_measurement(
         number_of_files=number_of_files,
         patient_reference=patient_reference,
         shifter_id=shifter_id,
-        directory_id=measuerement_directory_id
+        directory_id=measuerement_directory_id,
     )
 
 
@@ -395,7 +399,9 @@ def edit_measurement(
         measurement.number_of_files = measurement_data.number_of_files
         measurement.patient_reference = measurement_data.patient_reference
         measurement.shifter_id = measurement_data.shifter_id
-        measurement.measurement_folder_id = measurement_data.measurement_folder_id
+        measurement.measurement_folder_id = (
+            measurement_data.measurement_folder_id
+        )
 
         db.commit()
         db.refresh(measurement)

@@ -1,19 +1,18 @@
 import faker
-
-from sqlalchemy import func
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 import database.models as models
 from backend.auth import get_current_user
 from backend.routers.common import generate_models
-from backend.utills.utills import get_random_measurement, get_random_experiment
+from backend.utills.utills import get_random_experiment, get_random_measurement
 from database.database import get_session_local
-
 
 generator = faker.Faker()
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
+
 
 def generate_fake_measurement_directory(db: Session = None):
     all_experiments = db.query(models.Experiment.id).order_by(func.random())
@@ -40,7 +39,11 @@ def create_sample_measurement_directories(
     fake_data: dict = None,
 ):
     measurement_dirs = generate_models(
-        models.MeasurementDirectory, generate_fake_measurement_directory, db, amount, fake_data
+        models.MeasurementDirectory,
+        generate_fake_measurement_directory,
+        db,
+        amount,
+        fake_data,
     )
     try:
         db.add_all(measurement_dirs)
@@ -51,6 +54,7 @@ def create_sample_measurement_directories(
             status_code=500, detail="Failed to create measurements"
         )
     return {"message": "Sample measurements created"}
+
 
 @router.get("/")
 def read_measurement_directoreis(db: Session = Depends(get_session_local)):

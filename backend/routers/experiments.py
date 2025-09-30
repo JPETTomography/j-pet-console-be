@@ -199,10 +199,10 @@ def read_experiment_measurements(
         )
 
     offset = (page - 1) * size
-    measurements = db.query(models.Measurement).join(
-        models.MeasurementDirectory
-    ).filter(
-        models.MeasurementDirectory.experiment_id == id
+    measurements = (
+        db.query(models.Measurement)
+        .join(models.MeasurementDirectory)
+        .filter(models.MeasurementDirectory.experiment_id == id)
     )
     measurements = (
         measurements.options(joinedload(models.Measurement.tags))
