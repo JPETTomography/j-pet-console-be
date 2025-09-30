@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+psycopg2-binary
+sqlalchemy
+pika
+faker
+sqladmin
+PyJWT
+passlib
+pdbpp
+pydantic[email]
+alembic
