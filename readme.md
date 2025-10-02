@@ -82,7 +82,8 @@ You can use requirements-dev.txt to install usefil dependencies for LSP, like is
 ```
 git submodule init
 git submodule update --remote --recursive
-
+cd agent
+git checkout origin/master
 ```
 
 3. Download data. Use `common/data_helpers/download_data.sh` to download exemplary files to `examplary_data_hold` 
@@ -99,7 +100,8 @@ docker compose -f docker-compose.yaml -f docker-compose.local.yaml up --build
 5. Run frontend
 
 ```
-cd j-pet-console-fe
+cd frontend
+echo 'REACT_APP_API_SOURCE = "http://localhost:8000"' > .env
 docker compose -f docker-compose.yml up --build
 ```
 
