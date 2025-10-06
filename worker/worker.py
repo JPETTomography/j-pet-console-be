@@ -66,7 +66,7 @@ def consume_messages():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     channel.queue_declare(queue="worker_topic", durable=True)
-    channel.basic_qos(prefetch_count=1)
+    channel.basic_qos()
     channel.basic_consume(queue="worker_topic", on_message_callback=callback)
     logger.info("Waiting for messages...")
     channel.start_consuming()
@@ -233,6 +233,9 @@ def save_data_entry_to_db(json_data, agent_code):
     finally:
         session.close()
 
+def get_last_meteo_id_in_db():
+    return 759642
+
 
 def callback(ch, method, properties, body):
     json_payload = json.loads(body.decode())
@@ -295,6 +298,14 @@ def callback(ch, method, properties, body):
         case "folder_info":
             event_data = json_payload["data"]
             save_folder_info_to_db(agent_code=agent_code, **event_data)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        case "meteo_data":
+            print(json_payload)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        case "meteo_id_query":
+            last_meteo_id = get_last_meteo_id_in_db()
+            message = json.dumps({"data": last_meteo_id}).encode("utf-8")
+            ch.basic_publish('', routing_key=properties.reply_to, body=message)
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
