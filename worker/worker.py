@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pika
 from loguru import logger
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, select
 
 from database.database import get_session_local
 from database.models import (
@@ -18,6 +18,7 @@ from database.models import (
     Experiment,
     Measurement,
     MeasurementDirectory,
+    MeteoReadout,
 )
 
 
@@ -51,7 +52,7 @@ def receive_data(producer_ip: str, producer_port: str) -> dict:
                 break
             buffer += data
         json_data = json.loads(buffer)
-        # logger.info("Received JSON data:", json.dumps(json_data, indent=2))
+        # logger.info(f"Received JSON data: {json_data} of length {len(buffer)}")
     return json_data
 
 
@@ -234,74 +235,124 @@ def save_data_entry_to_db(json_data, agent_code):
         session.close()
 
 def get_last_meteo_id_in_db():
-    return 759642
+    gen = get_session_local()
+    session = next(gen)
+    max_meteo_id = None
+
+    try:
+        max_meteo_id = session.scalar(select(func.max(MeteoReadout.id)))
+    except Exception as e:
+        logger.error(f"Couldn't read max id of meteo_readout: {e}")
+    finally:
+        session.close()
+        return max_meteo_id
+
+def insert_meteo_data_into_db(json_data, agent_code):
+    rows = json_data["rows"]
+    gen = get_session_local()
+    session = next(gen)
+    print(len(rows))
+
+    try:
+        meteo_readouts = [MeteoReadout(
+            id=row["id"],
+            station_time = row["station_time"],
+            agent_time = row["agent_time"],
+            p_atm = row["p_atm"],
+            p_1 = row["p_1"],
+            p_2 = row["p_2"],
+            hum_1 = row["hum_1"],
+            hum_2 = row["hum_2"],
+            temp_1 = row["temp_1"],
+            temp_2 = row["temp_2"],
+            # created_at = row["station_time"],
+            # updated_at = row["station_time"],
+            measurement_id = row["measurement_id"]
+        ) for row in rows]
+        session.bulk_save_objects(meteo_readouts)
+        session.commit()
+    except Exception as e:
+        logger.error(f"Failed to save new meteo data to db: {e}")
+        session.rollback()
+    finally:
+        session.close()
+    
+
+def receive_data_though_a_socket(json_payload, agent_code, ch, method, parse_data_before_confirming_delivery):
+    connection_data = json_payload["data"]
+    address, port = connection_data["ip"], connection_data["port"]
+    logger.info(
+        f"Received producer IP and port info: {connection_data}"
+    )
+    try:
+        json_data = receive_data(address, port)
+    except ConnectionRefusedError:
+        logger.error(
+            f"Connection to producer at {address}:{port} refused"
+        )
+    except socket.timeout:
+        logger.error("No data received within 15 seconds. Exiting.")
+    else:
+        parse_data_before_confirming_delivery(json_data, agent_code)
+    finally:
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    logger.info("DONE!")
+
+def save_measurements_or_dump_failure(json_data, agent_code):
+    try:
+        save_data_entry_to_db(json_data, agent_code)
+    except Exception as e:
+        failed_dumps_dir = Path("/failed_dumps")
+        failed_dumps_dir.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[
+            :-3
+        ]
+        json_filename = f"{agent_code}_{timestamp}.json"
+        error_filename = f"{agent_code}_{timestamp}.error"
+        json_filepath = failed_dumps_dir / json_filename
+        error_filepath = failed_dumps_dir / error_filename
+        try:
+            with open(json_filepath, "w") as f:
+                json.dump(json_data, f, indent=2)
+            with open(error_filepath, "w") as f:
+                f.write(traceback.format_exc())
+            logger.error(
+                f"Failed to save data to DB. JSON dumped to: {json_filepath}"
+            )
+        except Exception as dump_error:
+            logger.error(
+                f"Failed to dump JSON to file {json_filepath}: {dump_error}"
+            )
+            logger.error("=====ARGS=====")
+            logger.error(f"AGENT_CODE: {agent_code}")
+            logger.error("")
+            logger.error(f"JSON_DATA: {json_data}")
+            logger.error("-----ERROR-----")
+            logger.error(f"Found error: {e}")
+            logger.error("==============")
+
+        logger.error(f"Database save error: {e}")
+        raise
 
 
 def callback(ch, method, properties, body):
     json_payload = json.loads(body.decode())
-    agent_code = json_payload["agent_code"]
     logger.info(f"Received message {json_payload}")
     agent_code = json_payload["agent_code"]
+
     match json_payload["message_type"]:
         case "connection_info":
-            connection_data = json_payload["data"]
-            address, port = connection_data["ip"], connection_data["port"]
-            logger.info(
-                f"Received producer IP and port info: {connection_data}"
-            )
-            try:
-                json_data = receive_data(address, port)
-            except ConnectionRefusedError:
-                logger.error(
-                    f"Connection to producer at {address}:{port} refused"
-                )
-            except socket.timeout:
-                logger.error("No data received within 15 seconds. Exiting.")
-            else:
-                try:
-                    save_data_entry_to_db(json_data, agent_code)
-                except Exception as e:
-                    failed_dumps_dir = Path("/failed_dumps")
-                    failed_dumps_dir.mkdir(exist_ok=True)
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[
-                        :-3
-                    ]
-                    json_filename = f"{agent_code}_{timestamp}.json"
-                    error_filename = f"{agent_code}_{timestamp}.error"
-                    json_filepath = failed_dumps_dir / json_filename
-                    error_filepath = failed_dumps_dir / error_filename
-                    try:
-                        with open(json_filepath, "w") as f:
-                            json.dump(json_data, f, indent=2)
-                        with open(error_filepath, "w") as f:
-                            f.write(traceback.format_exc())
-                        logger.error(
-                            f"Failed to save data to DB. JSON dumped to: {json_filepath}"
-                        )
-                    except Exception as dump_error:
-                        logger.error(
-                            f"Failed to dump JSON to file {json_filepath}: {dump_error}"
-                        )
-                        logger.error("=====ARGS=====")
-                        logger.error(f"AGENT_CODE: {agent_code}")
-                        logger.error("")
-                        logger.error(f"JSON_DATA: {json_data}")
-                        logger.error("-----ERROR-----")
-                        logger.error(f"Found error: {e}")
-                        logger.error("==============")
+            receive_data_though_a_socket(json_payload, agent_code, ch, method, save_measurements_or_dump_failure)
 
-                    logger.error(f"Database save error: {e}")
-                    raise
-            finally:
-                ch.basic_ack(delivery_tag=method.delivery_tag)
-            logger.info("DONE!")
         case "folder_info":
             event_data = json_payload["data"]
             save_folder_info_to_db(agent_code=agent_code, **event_data)
             ch.basic_ack(delivery_tag=method.delivery_tag)
-        case "meteo_data":
-            print(json_payload)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+        
+        case "meteo_connection_info":
+            receive_data_though_a_socket(json_payload, agent_code, ch, method, insert_meteo_data_into_db)
+
         case "meteo_id_query":
             last_meteo_id = get_last_meteo_id_in_db()
             message = json.dumps({"data": last_meteo_id}).encode("utf-8")
