@@ -25,7 +25,7 @@ services:
         condition: service_started
     environment:
       RABBITMQ_HOST: "rabbitmq"
-      CORS_ORIGIN: "${CORS_ORIGIN:-localhost:3000}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:3000}"
       PICTURES_DIR: /pictures
     volumes:
       - pictures-data:/pictures

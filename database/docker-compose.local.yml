@@ -1,0 +1,13 @@
+services:
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "5430:8080"
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    name: my_network
+    driver: bridge
