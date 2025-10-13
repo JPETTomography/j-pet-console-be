@@ -191,7 +191,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
             }
         )
 
-    return {
+    response = {
         "id": measurement.id,
         "name": measurement.name,
         "description": measurement.description,
@@ -204,6 +204,8 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         "data_entry": measurement.data_entry,
         "comments": serialized_comments,
     }
+    logger.debug(response)
+    return response
 
 
 @router.post("/{id}/comments")
