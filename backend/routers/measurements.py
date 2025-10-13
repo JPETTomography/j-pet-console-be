@@ -201,7 +201,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         "shifter_id": measurement.shifter_id,
         "tags": measurement.tags,
         "radioisotopes": measurement.radioisotopes,
-        "data_entry": measurement.data_entry,
+        # "data_entry": measurement.data_entry,
         "comments": serialized_comments,
     }
     logger.debug(response)
