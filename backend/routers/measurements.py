@@ -28,6 +28,7 @@ from backend.utills.utills import (
     get_random_user,
 )
 from database.database import get_session_local
+from loguru import logger
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 
@@ -158,6 +159,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         .first()
     )
 
+    logger.debug(measurement)
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
@@ -172,6 +174,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         .all()
     )
 
+    logger.debug(comments)
     serialized_comments = []
     for comment in comments:
         serialized_comments.append(
