@@ -14,6 +14,7 @@ from fastapi import (
     Query,
     UploadFile,
 )
+from loguru import logger
 from pydantic import BaseModel, Field
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, joinedload
@@ -28,7 +29,6 @@ from backend.utills.utills import (
     get_random_user,
 )
 from database.database import get_session_local
-from loguru import logger
 
 PICTURES_DIR = os.environ.get("PICTURES_DIR", "pictures")
 
