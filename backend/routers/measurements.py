@@ -14,6 +14,7 @@ from fastapi import (
     Query,
     UploadFile,
 )
+from loguru import logger
 from pydantic import BaseModel, Field
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, joinedload
@@ -158,6 +159,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         .first()
     )
 
+    logger.debug(measurement)
     if not measurement:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
@@ -172,6 +174,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         .all()
     )
 
+    logger.debug(comments)
     serialized_comments = []
     for comment in comments:
         serialized_comments.append(
@@ -188,7 +191,7 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
             }
         )
 
-    return {
+    response = {
         "id": measurement.id,
         "name": measurement.name,
         "description": measurement.description,
@@ -198,9 +201,11 @@ def read_measurement(id: str, db: Session = Depends(get_session_local)):
         "shifter_id": measurement.shifter_id,
         "tags": measurement.tags,
         "radioisotopes": measurement.radioisotopes,
-        "data_entry": measurement.data_entry,
+        # "data_entry": measurement.data_entry,
         "comments": serialized_comments,
     }
+    logger.debug(response)
+    return response
 
 
 @router.post("/{id}/comments")

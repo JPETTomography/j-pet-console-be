@@ -10,3 +10,4 @@ passlib
 pdbpp
 pydantic[email]
 alembic
+loguru==0.7.3

@@ -11,12 +11,15 @@ The `~/rootfiles` should contain the actual data taken by the machine, the agent
 
 ## Backend
 
-Go to github -> actions -> backend, click "run workflow", select the branch you want to deploy.
+Go to github -> actions -> deploy-staging-backend, click "run workflow", select the branch you want to deploy.
 
 ## Frontend
 
-Go to github -> actions -> frontend, click "run workflow", select the branch you want to deploy.
+Go to github -> actions -> deploy-staging-frontend, click "run workflow", select the branch you want to deploy.
 
+## Deploying with commit
+
+Adding `#staging-backend` or `#staging-frontend` will trigger the deploy workflow directly from any pushed branch.
 
 # Developement Setup
 
